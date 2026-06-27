@@ -8,10 +8,10 @@ export function LoginPage() {
 
   const [form, setForm] = useState({ login: '', password: '' })
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     clearError()
-    const ok = login(form.login, form.password)
+    const ok = await login(form.login, form.password)
     if (ok) navigate('/')
   }
 
