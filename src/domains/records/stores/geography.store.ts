@@ -106,7 +106,8 @@ export const useGeographyStore = create<GeographyState>((set, get) => ({
       set({ neighborhoods: [...get().neighborhoods, result] })
       return result
     } catch (err: any) {
-      set({ error: err.message || 'Erro ao criar bairro.' })
+      const msg = err.status === 403 ? 'Sem permissão para cadastrar.' : (err.message || 'Erro ao criar bairro.')
+      set({ error: msg })
       return null
     }
   },
@@ -137,7 +138,8 @@ export const useGeographyStore = create<GeographyState>((set, get) => ({
       set({ roads: [...get().roads, result] })
       return result
     } catch (err: any) {
-      set({ error: err.message || 'Erro ao criar via.' })
+      const msg = err.status === 403 ? 'Sem permissão para cadastrar.' : (err.message || 'Erro ao criar via.')
+      set({ error: msg })
       return null
     }
   },

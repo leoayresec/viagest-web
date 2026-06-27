@@ -32,6 +32,8 @@ function tuboVol(diam: string | undefined, comp: number): number {
 
 export function RecordsPage() {
   const user = useAuthStore((s) => s.user)
+  const hasPermission = useAuthStore((s) => s.hasPermission)
+  const canEdit = hasPermission('settings:write')
   const {
     states, cities, neighborhoods, roads, teamMembers,
     fetchStates, fetchCities, fetchNeighborhoods, createNeighborhood,
@@ -50,8 +52,14 @@ export function RecordsPage() {
   const [selectedRecorder, setSelectedRecorder] = useState(isApontador ? (user?.name || '') : '')
   const [msg, setMsg] = useState('')
 
+  const [modalBairro, setModalBairro] = useState(false)
   const [novoBairro, setNovoBairro] = useState('')
+  const [loadingBairro, setLoadingBairro] = useState(false)
+  const [msgBairro, setMsgBairro] = useState('')
+  const [modalVia, setModalVia] = useState(false)
   const [novaVia, setNovaVia] = useState('')
+  const [loadingVia, setLoadingVia] = useState(false)
+  const [msgVia, setMsgVia] = useState('')
 
   const [limpezaComp, setLimpezaComp] = useState('')
   const [limpezaLarg, setLimpezaLarg] = useState('')
@@ -132,22 +140,34 @@ export function RecordsPage() {
   const apontadores = teamMembers.filter((m) => m.role.name === 'apontador')
 
   async function handleAddBairro() {
-    if (novoBairro.trim() && selectedCity) {
-      const result = await createNeighborhood(selectedCity, novoBairro.trim())
-      if (result) {
-        setSelectedNeighborhood(result.id)
-        setNovoBairro('')
-      }
+    if (!novoBairro.trim() || !selectedCity) return
+    setLoadingBairro(true)
+    setMsgBairro('')
+    const result = await createNeighborhood(selectedCity, novoBairro.trim())
+    setLoadingBairro(false)
+    if (result) {
+      setMsgBairro('Bairro inserido com sucesso!')
+      setSelectedNeighborhood(result.id)
+      setNovoBairro('')
+      setTimeout(() => { setModalBairro(false); setMsgBairro('') }, 1200)
+    } else {
+      setMsgBairro('Erro ao cadastrar bairro. Verifique se você tem permissão.')
     }
   }
 
   async function handleAddVia() {
-    if (selectedNeighborhood && novaVia.trim()) {
-      const result = await createRoad(selectedNeighborhood, novaVia.trim())
-      if (result) {
-        setSelectedRoad(result.id)
-        setNovaVia('')
-      }
+    if (!novaVia.trim() || !selectedNeighborhood) return
+    setLoadingVia(true)
+    setMsgVia('')
+    const result = await createRoad(selectedNeighborhood, novaVia.trim())
+    setLoadingVia(false)
+    if (result) {
+      setMsgVia('Via inserida com sucesso!')
+      setSelectedRoad(result.id)
+      setNovaVia('')
+      setTimeout(() => { setModalVia(false); setMsgVia('') }, 1200)
+    } else {
+      setMsgVia('Erro ao cadastrar via. Verifique se você tem permissão.')
     }
   }
 
@@ -432,8 +452,7 @@ export function RecordsPage() {
                 <option value="">Selecione o bairro</option>
                 {neighborhoods.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
               </select>
-              <input type="text" value={novoBairro} onChange={(e) => setNovoBairro(e.target.value)} placeholder="Novo" className="w-20 px-2 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-500" />
-              <button onClick={handleAddBairro} className="px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-xs rounded hover:bg-zinc-300 dark:hover:bg-zinc-600">+</button>
+              {canEdit && <button onClick={() => setModalBairro(true)} disabled={!selectedCity} className="px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-xs rounded hover:bg-zinc-300 dark:hover:bg-zinc-600 disabled:opacity-50 font-bold">+</button>}
             </div>
           </div>
           <div>
@@ -443,8 +462,7 @@ export function RecordsPage() {
                 <option value="">Selecione a via</option>
                 {roads.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
-              <input type="text" value={novaVia} onChange={(e) => setNovaVia(e.target.value)} placeholder="Nova" className="w-20 px-2 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-500" />
-              <button onClick={handleAddVia} className="px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-xs rounded hover:bg-zinc-300 dark:hover:bg-zinc-600">+</button>
+              {canEdit && <button onClick={() => setModalVia(true)} disabled={!selectedNeighborhood} className="px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-xs rounded hover:bg-zinc-300 dark:hover:bg-zinc-600 disabled:opacity-50 font-bold">+</button>}
             </div>
           </div>
           <div>
@@ -808,6 +826,40 @@ export function RecordsPage() {
           <p className="text-xs text-zinc-500 mt-2 text-center">Selecione Via e Encarregado antes de salvar.</p>
         )}
       </div>
+
+      {/* Modal Bairro */}
+      {modalBairro && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => { if (!loadingBairro) { setModalBairro(false); setMsgBairro(''); setNovoBairro('') } }}>
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-6 w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Novo Bairro</h3>
+            <input type="text" value={novoBairro} onChange={(e) => setNovoBairro(e.target.value)} placeholder="Nome do bairro" autoFocus onKeyDown={(e) => e.key === 'Enter' && handleAddBairro()} disabled={loadingBairro} className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm mb-3 disabled:opacity-50" />
+            {msgBairro && <p className={`text-sm mb-3 ${msgBairro.includes('sucesso') ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{msgBairro}</p>}
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => { setModalBairro(false); setMsgBairro(''); setNovoBairro('') }} disabled={loadingBairro} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg disabled:opacity-50">Cancelar</button>
+              <button onClick={handleAddBairro} disabled={!novoBairro.trim() || loadingBairro} className="px-4 py-2 text-sm bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-lg hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50">
+                {loadingBairro ? 'Salvando...' : 'Adicionar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Via */}
+      {modalVia && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => { if (!loadingVia) { setModalVia(false); setMsgVia(''); setNovaVia('') } }}>
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-6 w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Nova Via</h3>
+            <input type="text" value={novaVia} onChange={(e) => setNovaVia(e.target.value)} placeholder="Nome da via" autoFocus onKeyDown={(e) => e.key === 'Enter' && handleAddVia()} disabled={loadingVia} className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm mb-3 disabled:opacity-50" />
+            {msgVia && <p className={`text-sm mb-3 ${msgVia.includes('sucesso') ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{msgVia}</p>}
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => { setModalVia(false); setMsgVia(''); setNovaVia('') }} disabled={loadingVia} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg disabled:opacity-50">Cancelar</button>
+              <button onClick={handleAddVia} disabled={!novaVia.trim() || loadingVia} className="px-4 py-2 text-sm bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-lg hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-50">
+                {loadingVia ? 'Salvando...' : 'Adicionar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
