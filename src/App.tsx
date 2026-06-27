@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AppLayout } from './core/layout/AppLayout'
 import { ProtectedRoute } from './core/layout/ProtectedRoute'
+import { RoleRoute } from './core/layout/RoleRoute'
 import { LoginPage } from './domains/auth/pages/LoginPage'
 import { DashboardPage } from './domains/dashboard/pages/DashboardPage'
 import { RecordsPage } from './domains/records/pages/RecordsPage'
@@ -30,20 +31,22 @@ function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/lancamentos" element={<RecordsPage />} />
             <Route path="/correcoes" element={<CorrectionsPage />} />
-            <Route path="/cadastros" element={<SettingsPage />} />
-            <Route path="/usuarios" element={<UsersPage />} />
-            <Route path="/backup" element={<BackupPage />} />
-            <Route path="/perfil" element={<ProfilePage />} />
-            <Route path="/historico-via" element={<HistoricoViaPage />} />
-            <Route path="/controle-relatorios" element={<ControleRelatoriosPage />} />
             <Route path="/relatorio-whatsapp" element={<RelatorioWhatsAppPage />} />
-            <Route path="/relatorio-pdf" element={<RelatorioPDFPage />} />
-            <Route path="/relatorios-cadastros" element={<RelatoriosCadastrosPage />} />
-            <Route path="/planilha-medicao" element={<PlanilhaMedicaoPage />} />
-            <Route path="/estimativa" element={<EstimativaFinanceiraPage />} />
-            <Route path="/avanco-obra" element={<AvancObraPage />} />
-            <Route path="/prateleira" element={<PrateleiraPage />} />
-            <Route path="/sistema" element={<SistemaPage />} />
+            <Route path="/perfil" element={<ProfilePage />} />
+            <Route element={<RoleRoute allowedProfiles={['admin']} />}>
+              <Route path="/cadastros" element={<SettingsPage />} />
+              <Route path="/usuarios" element={<UsersPage />} />
+              <Route path="/backup" element={<BackupPage />} />
+              <Route path="/historico-via" element={<HistoricoViaPage />} />
+              <Route path="/controle-relatorios" element={<ControleRelatoriosPage />} />
+              <Route path="/relatorio-pdf" element={<RelatorioPDFPage />} />
+              <Route path="/relatorios-cadastros" element={<RelatoriosCadastrosPage />} />
+              <Route path="/planilha-medicao" element={<PlanilhaMedicaoPage />} />
+              <Route path="/estimativa" element={<EstimativaFinanceiraPage />} />
+              <Route path="/avanco-obra" element={<AvancObraPage />} />
+              <Route path="/prateleira" element={<PrateleiraPage />} />
+              <Route path="/sistema" element={<SistemaPage />} />
+            </Route>
           </Route>
         </Route>
       </Routes>

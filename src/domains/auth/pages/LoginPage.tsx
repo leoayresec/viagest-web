@@ -62,6 +62,14 @@ export function LoginPage() {
           </button>
         </form>
 
+        <div className="mt-4 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Contas de teste:</p>
+          <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-300">
+            <p><span className="font-mono font-semibold">admin</span> / <span className="font-mono font-semibold">1234</span> <span className="text-purple-600 dark:text-purple-400">(Administrador)</span></p>
+            <p><span className="font-mono font-semibold">apontador</span> / <span className="font-mono font-semibold">1234</span> <span className="text-zinc-500 dark:text-zinc-400">(Apontador)</span></p>
+          </div>
+        </div>
+
         <p className="text-center text-xs text-zinc-400 dark:text-zinc-600 mt-4">admin / 1234</p>
       </div>
     </div>

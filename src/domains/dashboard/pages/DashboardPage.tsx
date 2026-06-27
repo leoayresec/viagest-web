@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRecordsStore } from '../../records/stores/records.store'
+import { useAuthStore } from '../../auth/auth.store'
 
 function fmt(v: number | undefined): string {
   if (v == null || v <= 0) return '-'
@@ -58,10 +59,17 @@ function calcMetricas(registros: any[]) {
 
 export function DashboardPage() {
   const navigate = useNavigate()
+  const user = useAuthStore((s) => s.user)
+  const isAdmin = user?.profile === 'admin'
+
   const [dataFoco, setDataFoco] = useState(new Date().toISOString().slice(0, 10))
   const records = useRecordsStore((s) => s.records)
-  const registrosHoje = records.filter((r) => r.date === dataFoco)
-  const metricas = calcMetricas(registrosHoje)
+
+  const registrosFiltrados = isAdmin
+    ? records.filter((r) => r.date === dataFoco)
+    : records.filter((r) => r.date === dataFoco && r.apontador === user?.name)
+
+  const metricas = calcMetricas(registrosFiltrados)
   const producao = [
     metricas.escavacao_m3 > 0 && { label: 'Escavação', valor: fmt(metricas.escavacao_m3) + ' m³' },
     metricas.colchao_m3 > 0 && { label: 'Colchão de areia', valor: fmt(metricas.colchao_m3) + ' m³' },
@@ -82,11 +90,13 @@ export function DashboardPage() {
     metricas.limpeza_m2 > 0 && { label: 'Limpeza', valor: fmt(metricas.limpeza_m2) + ' m²' },
   ].filter(Boolean) as { label: string; valor: string }[]
 
-  const frentes = [...new Set(registrosHoje.map((r) => `${r.bairro} / ${r.via}`))].sort()
+  const frentes = [...new Set(registrosFiltrados.map((r) => `${r.bairro} / ${r.via}`))].sort()
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Central Operacional</h1>
+      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+        {isAdmin ? 'Central Operacional' : 'Meu Dia'}
+      </h1>
 
       <div className="flex items-end gap-4 flex-wrap">
         <div>
@@ -95,29 +105,46 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {registrosHoje.length > 0 ? (
+      {registrosFiltrados.length > 0 ? (
         <p className="text-sm text-emerald-600 dark:text-emerald-400">{metricas.registros} lançamento(s) encontrado(s) para {new Date(dataFoco + 'T12:00:00').toLocaleDateString('pt-BR')}.</p>
       ) : (
         <p className="text-sm text-zinc-500">Nenhum lançamento encontrado para esta data.</p>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Lançamentos', value: String(metricas.registros) },
-          { label: 'Bairros', value: String(metricas.bairros) },
-          { label: 'Vias', value: String(metricas.vias) },
-          { label: 'Apontadores', value: String(metricas.apontadores) },
-        ].map((kpi) => (
-          <div key={kpi.label} className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
-            <p className="text-xs text-zinc-500">{kpi.label}</p>
-            <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">{kpi.value}</p>
+      {isAdmin && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Lançamentos', value: String(metricas.registros) },
+            { label: 'Bairros', value: String(metricas.bairros) },
+            { label: 'Vias', value: String(metricas.vias) },
+            { label: 'Apontadores', value: String(metricas.apontadores) },
+          ].map((kpi) => (
+            <div key={kpi.label} className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+              <p className="text-xs text-zinc-500">{kpi.label}</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">{kpi.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isAdmin && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+            <p className="text-xs text-zinc-500">Meus lançamentos</p>
+            <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">{String(metricas.registros)}</p>
           </div>
-        ))}
-      </div>
+          <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+            <p className="text-xs text-zinc-500">Vias trabalhadas</p>
+            <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">{String(metricas.vias)}</p>
+          </div>
+        </div>
+      )}
 
       {producao.length > 0 && (
         <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Resumo operacional do dia</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+            {isAdmin ? 'Resumo operacional do dia' : 'Minha produção do dia'}
+          </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -139,22 +166,25 @@ export function DashboardPage() {
         </div>
       )}
 
-      <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Frentes trabalhadas</h2>
-        {frentes.length > 0 ? (
-          <ul className="space-y-1">
-            {frentes.map((f) => <li key={f} className="text-sm text-zinc-700 dark:text-zinc-300">{f}</li>)}
-          </ul>
-        ) : (
-          <p className="text-sm text-zinc-500">Nenhuma frente trabalhada nessa data.</p>
-        )}
-      </div>
+      {isAdmin && (
+        <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Frentes trabalhadas</h2>
+          {frentes.length > 0 ? (
+            <ul className="space-y-1">
+              {frentes.map((f) => <li key={f} className="text-sm text-zinc-700 dark:text-zinc-300">{f}</li>)}
+            </ul>
+          ) : (
+            <p className="text-sm text-zinc-500">Nenhuma frente trabalhada nessa data.</p>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <button onClick={() => navigate('/lancamentos')} className="px-4 py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">Lançar atividade</button>
-        <button onClick={() => navigate('/relatorios')} className="px-4 py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">Relatórios</button>
+        {isAdmin && <button onClick={() => navigate('/controle-relatorios')} className="px-4 py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">Relatórios</button>}
         <button onClick={() => navigate('/correcoes')} className="px-4 py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">Correções</button>
-        <button onClick={() => navigate('/cadastros')} className="px-4 py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">Cadastros</button>
+        {isAdmin && <button onClick={() => navigate('/cadastros')} className="px-4 py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">Cadastros</button>}
+        {!isAdmin && <button onClick={() => navigate('/relatorio-whatsapp')} className="px-4 py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">WhatsApp</button>}
       </div>
     </div>
   )

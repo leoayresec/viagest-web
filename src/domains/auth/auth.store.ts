@@ -19,17 +19,27 @@ interface AuthState {
   clearError: () => void
 }
 
+const DEFAULT_USERS: StoredUser[] = [
+  { login: 'admin', password: '1234', name: 'ADMIN', profile: 'admin', active: true },
+  { login: 'apontador', password: '1234', name: 'APONTADOR', profile: 'apontador', active: true },
+]
+
 function getUsers(): StoredUser[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) {
-      const defaultUser: StoredUser = { login: 'admin', password: '1234', name: 'ADMIN', profile: 'admin', active: true }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([defaultUser]))
-      return [defaultUser]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_USERS))
+      return [...DEFAULT_USERS]
     }
-    return JSON.parse(raw)
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_USERS))
+      return [...DEFAULT_USERS]
+    }
+    return parsed
   } catch {
-    return []
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_USERS))
+    return [...DEFAULT_USERS]
   }
 }
 
