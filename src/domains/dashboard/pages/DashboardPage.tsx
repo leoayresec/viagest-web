@@ -60,7 +60,8 @@ function calcMetricas(registros: any[]) {
 export function DashboardPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const isAdmin = user?.profile === 'admin'
+  const hasPermission = useAuthStore((s) => s.hasPermission)
+  const isAdmin = hasPermission('reports:controle')
 
   const [dataFoco, setDataFoco] = useState(new Date().toISOString().slice(0, 10))
   const records = useRecordsStore((s) => s.records)

@@ -22,6 +22,7 @@ function positivo(v: number | undefined): boolean {
 
 export function RecordsPage() {
   const user = useAuthStore((s) => s.user)
+  const hasPermission = useAuthStore((s) => s.hasPermission)
   const { listarBairros, listarVias, listarViasAtivas, listarEquipe, salvarVia, salvarMembro } = useSettingsStore()
   const addRecord = useRecordsStore((s) => s.add)
 
@@ -116,7 +117,7 @@ export function RecordsPage() {
   const [infoAdic, setInfoAdic] = useState('')
 
   const bairros = listarBairros()
-  const viasDisponiveis = user?.profile === 'apontador' ? listarViasAtivas(bairro) : listarVias(bairro)
+  const viasDisponiveis = !hasPermission('settings:write') ? listarViasAtivas(bairro) : listarVias(bairro)
   const encarregados = listarEquipe('encarregado')
   const apontadores = listarEquipe('apontador')
 
@@ -300,7 +301,7 @@ export function RecordsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Apontador</label>
-            {user?.profile === 'admin' ? (
+            {hasPermission('settings:write') ? (
               <div className="flex gap-1">
                 <datalist id="apontList">{apontadores.map((a) => <option key={a} value={a} />)}</datalist>
                 <input type="text" list="apontList" value={apontador} onChange={(e) => setApontador(e.target.value)} className="flex-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500" />
@@ -588,7 +589,7 @@ export function RecordsPage() {
           </div>
         </details>
 
-        {user?.profile === 'admin' && (
+        {hasPermission('settings:write') && (
           <>
             <details className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
               <summary className="p-4 cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">Redes auxiliares</summary>

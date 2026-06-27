@@ -33,19 +33,39 @@ function App() {
             <Route path="/correcoes" element={<CorrectionsPage />} />
             <Route path="/relatorio-whatsapp" element={<RelatorioWhatsAppPage />} />
             <Route path="/perfil" element={<ProfilePage />} />
-            <Route element={<RoleRoute allowedProfiles={['admin']} />}>
+            <Route element={<RoleRoute requiredPermissions={['settings:read']} />}>
               <Route path="/cadastros" element={<SettingsPage />} />
+            </Route>
+            <Route element={<RoleRoute requiredPermissions={['users:read']} />}>
               <Route path="/usuarios" element={<UsersPage />} />
+            </Route>
+            <Route element={<RoleRoute requiredPermissions={['system:backup']} />}>
               <Route path="/backup" element={<BackupPage />} />
-              <Route path="/historico-via" element={<HistoricoViaPage />} />
-              <Route path="/controle-relatorios" element={<ControleRelatoriosPage />} />
-              <Route path="/relatorio-pdf" element={<RelatorioPDFPage />} />
-              <Route path="/relatorios-cadastros" element={<RelatoriosCadastrosPage />} />
-              <Route path="/planilha-medicao" element={<PlanilhaMedicaoPage />} />
-              <Route path="/estimativa" element={<EstimativaFinanceiraPage />} />
-              <Route path="/avanco-obra" element={<AvancObraPage />} />
-              <Route path="/prateleira" element={<PrateleiraPage />} />
               <Route path="/sistema" element={<SistemaPage />} />
+            </Route>
+            <Route element={<RoleRoute requiredPermissions={['analysis:historico']} />}>
+              <Route path="/historico-via" element={<HistoricoViaPage />} />
+            </Route>
+            <Route element={<RoleRoute requiredPermissions={['reports:controle']} />}>
+              <Route path="/controle-relatorios" element={<ControleRelatoriosPage />} />
+            </Route>
+            <Route element={<RoleRoute requiredPermissions={['reports:pdf']} />}>
+              <Route path="/relatorio-pdf" element={<RelatorioPDFPage />} />
+            </Route>
+            <Route element={<RoleRoute requiredPermissions={['reports:cadastros']} />}>
+              <Route path="/relatorios-cadastros" element={<RelatoriosCadastrosPage />} />
+            </Route>
+            <Route element={<RoleRoute requiredPermissions={['reports:planilha']} />}>
+              <Route path="/planilha-medicao" element={<PlanilhaMedicaoPage />} />
+            </Route>
+            <Route element={<RoleRoute requiredPermissions={['analysis:estimativa']} />}>
+              <Route path="/estimativa" element={<EstimativaFinanceiraPage />} />
+            </Route>
+            <Route element={<RoleRoute requiredPermissions={['analysis:avanco']} />}>
+              <Route path="/avanco-obra" element={<AvancObraPage />} />
+            </Route>
+            <Route element={<RoleRoute requiredPermissions={['analysis:prateleira']} />}>
+              <Route path="/prateleira" element={<PrateleiraPage />} />
             </Route>
           </Route>
         </Route>

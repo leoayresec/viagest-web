@@ -7,20 +7,27 @@ interface ApiUser {
   id: string
   login: string
   name: string
-  profile: 'admin' | 'apontador'
+  role: string
   active: boolean
   createdAt: string
+}
+
+interface ApiRole {
+  id: string
+  name: string
+  description: string | null
 }
 
 export function UsersPage() {
   const { user: currentUser } = useAuthStore()
   const [users, setUsers] = useState<ApiUser[]>([])
+  const [roles, setRoles] = useState<ApiRole[]>([])
   const [loading, setLoading] = useState(false)
 
   const [showCreate, setShowCreate] = useState(false)
-  const [newForm, setNewForm] = useState({ login: '', nome: '', password: '123456', profile: 'apontador' as 'admin' | 'apontador' })
+  const [newForm, setNewForm] = useState({ login: '', nome: '', password: '123456', roleName: 'apontador' })
   const [selectedId, setSelectedId] = useState('')
-  const [editForm, setEditForm] = useState({ login: '', nome: '', profile: 'apontador' as 'admin' | 'apontador', password: '', confirmPassword: '' })
+  const [editForm, setEditForm] = useState({ login: '', nome: '', roleName: 'apontador', password: '', confirmPassword: '' })
   const [confirmDelete, setConfirmDelete] = useState('')
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -39,7 +46,21 @@ export function UsersPage() {
     }
   }, [])
 
+  const loadRoles = useCallback(async () => {
+    try {
+      const data = await api.get<ApiRole[]>('/users/roles')
+      setRoles(data)
+    } catch {
+      // fallback to default roles
+      setRoles([
+        { id: '1', name: 'admin', description: 'Administrador' },
+        { id: '2', name: 'apontador', description: 'Apontador' },
+      ])
+    }
+  }, [])
+
   useEffect(() => { loadUsers() }, [loadUsers])
+  useEffect(() => { loadRoles() }, [loadRoles])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -53,11 +74,11 @@ export function UsersPage() {
         login: newForm.login.trim(),
         password: newForm.password,
         name: newForm.nome.trim().toUpperCase(),
-        profile: newForm.profile,
+        roleName: newForm.roleName,
       })
       await loadUsers()
       setSuccessMsg('Usuário criado com sucesso.')
-      setNewForm({ login: '', nome: '', password: '123456', profile: 'apontador' })
+      setNewForm({ login: '', nome: '', password: '123456', roleName: 'apontador' })
       setShowCreate(false)
     } catch (err: any) {
       setErrorMsg(err.message || 'Erro ao criar usuário.')
@@ -69,7 +90,7 @@ export function UsersPage() {
     setConfirmDelete('')
     setSuccessMsg(null)
     setErrorMsg(null)
-    setEditForm({ login: user.login, nome: user.name, profile: user.profile, password: '', confirmPassword: '' })
+    setEditForm({ login: user.login, nome: user.name, roleName: user.role, password: '', confirmPassword: '' })
   }
 
   async function handleEdit(e: React.FormEvent) {
@@ -87,7 +108,7 @@ export function UsersPage() {
       const body: Record<string, string> = {
         login: editForm.login.trim(),
         name: editForm.nome.trim().toUpperCase(),
-        profile: editForm.profile,
+        roleName: editForm.roleName,
       }
       if (editForm.password) body.password = editForm.password
 
@@ -142,6 +163,11 @@ export function UsersPage() {
     }
   }
 
+  function getRoleLabel(name: string) {
+    const role = roles.find((r) => r.name === name)
+    return role?.description || name
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -149,7 +175,7 @@ export function UsersPage() {
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Usuários</h1>
       </div>
 
-      <p className="text-zinc-500 text-sm">Gerencie usuários administradores e apontadores.</p>
+      <p className="text-zinc-500 text-sm">Gerencie usuários do sistema.</p>
 
       {successMsg && (
         <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
@@ -165,7 +191,7 @@ export function UsersPage() {
 
       <details className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-4 group" open={showCreate} onToggle={(e) => setShowCreate(e.currentTarget.open)}>
         <summary className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 cursor-pointer select-none flex items-center gap-2">
-          <UserPlus className="w-5 h-5" /> Criar novo apontador/admin
+          <UserPlus className="w-5 h-5" /> Criar novo usuário
         </summary>
         <form onSubmit={handleCreate} className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -186,10 +212,11 @@ export function UsersPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Perfil</label>
-              <select value={newForm.profile} onChange={(e) => setNewForm({ ...newForm, profile: e.target.value as 'admin' | 'apontador' })}
+              <select value={newForm.roleName} onChange={(e) => setNewForm({ ...newForm, roleName: e.target.value })}
                 className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500">
-                <option value="apontador">Apontador</option>
-                <option value="admin">Administrador</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.name}>{getRoleLabel(r.name)}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -220,9 +247,9 @@ export function UsersPage() {
                   <td className="p-3">{u.login}</td>
                   <td className="p-3">{u.name}</td>
                   <td className="p-3">
-                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${u.profile === 'admin' ? 'text-purple-600 dark:text-purple-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
-                      {u.profile === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                      {u.profile === 'admin' ? 'Administrador' : 'Apontador'}
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${u.role === 'admin' ? 'text-purple-600 dark:text-purple-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                      {u.role === 'admin' ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                      {getRoleLabel(u.role)}
                     </span>
                   </td>
                   <td className="p-3">
@@ -282,10 +309,11 @@ export function UsersPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Perfil</label>
-              <select value={editForm.profile} onChange={(e) => setEditForm({ ...editForm, profile: e.target.value as 'admin' | 'apontador' })}
+              <select value={editForm.roleName} onChange={(e) => setEditForm({ ...editForm, roleName: e.target.value })}
                 className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500">
-                <option value="apontador">Apontador</option>
-                <option value="admin">Administrador</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.name}>{getRoleLabel(r.name)}</option>
+                ))}
               </select>
             </div>
             <p className="text-xs text-zinc-400 dark:text-zinc-600">Preencha a senha somente se quiser trocar.</p>

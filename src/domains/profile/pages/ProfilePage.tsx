@@ -22,7 +22,7 @@ export function ProfilePage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Perfil</label>
-          <p className="text-zinc-900 dark:text-zinc-100 capitalize">{user?.profile === 'admin' ? 'Administrador' : 'Apontador'}</p>
+          <p className="text-zinc-900 dark:text-zinc-100 capitalize">{user?.role}</p>
         </div>
       </div>
     </div>

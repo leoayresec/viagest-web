@@ -11,9 +11,10 @@ interface AuthState {
   login: (login: string, password: string) => Promise<boolean>
   logout: () => void
   clearError: () => void
+  hasPermission: (permission: string) => boolean
 }
 
-export const useAuthStore = create<AuthState>((set) => {
+export const useAuthStore = create<AuthState>((set, get) => {
   const saved = sessionStorage.getItem(SESSION_KEY)
   const initialUser: User | null = saved ? JSON.parse(saved) : null
   if (initialUser) {
@@ -50,5 +51,10 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     clearError: () => set({ error: null }),
+
+    hasPermission: (permission: string) => {
+      const user = get().user
+      return user?.permissions?.includes(permission) ?? false
+    },
   }
 })

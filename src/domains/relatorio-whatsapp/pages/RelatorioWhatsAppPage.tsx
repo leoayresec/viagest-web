@@ -230,6 +230,7 @@ function gerarTextoWhatsApp(records: ViaGestRecord[], dataTxt: string): string {
 
 export function RelatorioWhatsAppPage() {
   const user = useAuthStore((s) => s.user)
+  const hasPermission = useAuthStore((s) => s.hasPermission)
   const records = useRecordsStore((s) => s.records)
   const { listarEquipe } = useSettingsStore()
 
@@ -249,7 +250,7 @@ export function RelatorioWhatsAppPage() {
 
     let filtrados: ViaGestRecord[] = []
 
-    if (user?.profile === 'apontador') {
+    if (!hasPermission('reports:controle') && user) {
       filtrados = records.filter((r) => r.apontador === user.name && r.date === dataIni)
     } else {
       if (tipoRel === 'diario') {
@@ -278,7 +279,7 @@ export function RelatorioWhatsAppPage() {
       <p className="text-sm text-zinc-500">Texto formatado para copiar e enviar ao grupo da obra.</p>
 
       <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-4">
-        {user?.profile === 'admin' && (
+        {hasPermission('reports:controle') && (
           <>
             <div className="flex gap-4 flex-wrap">
               <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
@@ -319,7 +320,7 @@ export function RelatorioWhatsAppPage() {
           </>
         )}
 
-        {user?.profile === 'apontador' && (
+        {!hasPermission('reports:controle') && (
           <div>
             <label className="block text-xs text-zinc-500 mb-1">Data</label>
             <input type="date" value={dataIni} onChange={(e) => setDataIni(e.target.value)} className="w-full max-w-xs px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500" />

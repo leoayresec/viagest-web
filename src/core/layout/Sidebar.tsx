@@ -23,44 +23,64 @@ import {
 import { useAuthStore } from '../../domains/auth/auth.store'
 import { useTheme } from '../theme/ThemeContext'
 
-const mainNav = [
-  { to: '/', label: 'Dashboard', icon: Home, adminOnly: true },
-  { to: '/lancamentos', label: 'Lançar atividade', icon: ClipboardList, adminOnly: false },
-]
-
-const operacaoNav = [
-  { to: '/historico-via', label: 'Histórico da Via', icon: Eye, adminOnly: true },
-  { to: '/controle-relatorios', label: 'Controle de Relatórios', icon: BarChart3, adminOnly: true },
-]
-
-const relatoriosNav = [
-  { to: '/relatorio-whatsapp', label: 'Relatório WhatsApp', icon: MessageSquare, adminOnly: false },
-  { to: '/relatorio-pdf', label: 'Relatório PDF', icon: File, adminOnly: true },
-  { to: '/relatorios-cadastros', label: 'Relatórios de Cadastros', icon: Database, adminOnly: true },
-  { to: '/planilha-medicao', label: 'Planilha Medição', icon: Sheet, adminOnly: true },
-]
-
-const gestaoNav = [
-  { to: '/correcoes', label: 'Central de Correções', icon: AlertTriangle, adminOnly: false },
-  { to: '/cadastros', label: 'Cadastros', icon: Settings, adminOnly: true },
-  { to: '/usuarios', label: 'Usuários', icon: Users, adminOnly: true },
-]
-
-const analiseNav = [
-  { to: '/estimativa', label: 'Estimativa Financeira', icon: DollarSign, adminOnly: true },
-  { to: '/avanco-obra', label: 'Avanço da Obra', icon: TrendingUp, adminOnly: true },
-  { to: '/prateleira', label: 'Prateleira', icon: Archive, adminOnly: true },
-]
-
-const sistemaNav = [
-  { to: '/sistema', label: 'Sistema', icon: HardDriveDownload, adminOnly: true },
-  { to: '/perfil', label: 'Alterar senha', icon: UserCircle, adminOnly: false },
+const navGroups = [
+  {
+    label: 'CENTRAL',
+    items: [
+      { to: '/', label: 'Dashboard', icon: Home, permission: 'dashboard:view' },
+      { to: '/lancamentos', label: 'Lançar atividade', icon: ClipboardList, permission: 'records:create' },
+    ],
+  },
+  {
+    label: 'OPERAÇÃO',
+    items: [
+      { to: '/historico-via', label: 'Histórico da Via', icon: Eye, permission: 'analysis:historico' },
+      { to: '/controle-relatorios', label: 'Controle de Relatórios', icon: BarChart3, permission: 'reports:controle' },
+    ],
+  },
+  {
+    label: 'RELATÓRIOS',
+    items: [
+      { to: '/relatorio-whatsapp', label: 'Relatório WhatsApp', icon: MessageSquare, permission: 'reports:whatsapp' },
+      { to: '/relatorio-pdf', label: 'Relatório PDF', icon: File, permission: 'reports:pdf' },
+      { to: '/relatorios-cadastros', label: 'Relatórios de Cadastros', icon: Database, permission: 'reports:cadastros' },
+      { to: '/planilha-medicao', label: 'Planilha Medição', icon: Sheet, permission: 'reports:planilha' },
+    ],
+  },
+  {
+    label: 'GESTÃO',
+    items: [
+      { to: '/correcoes', label: 'Central de Correções', icon: AlertTriangle, permission: 'corrections:view' },
+      { to: '/cadastros', label: 'Cadastros', icon: Settings, permission: 'settings:read' },
+      { to: '/usuarios', label: 'Usuários', icon: Users, permission: 'users:read' },
+    ],
+  },
+  {
+    label: 'ANÁLISE',
+    items: [
+      { to: '/estimativa', label: 'Estimativa Financeira', icon: DollarSign, permission: 'analysis:estimativa' },
+      { to: '/avanco-obra', label: 'Avanço da Obra', icon: TrendingUp, permission: 'analysis:avanco' },
+      { to: '/prateleira', label: 'Prateleira', icon: Archive, permission: 'analysis:prateleira' },
+    ],
+  },
+  {
+    label: 'SISTEMA',
+    items: [
+      { to: '/sistema', label: 'Sistema', icon: HardDriveDownload, permission: 'system:backup' },
+      { to: '/perfil', label: 'Meu Perfil', icon: UserCircle, permission: null },
+    ],
+  },
 ]
 
 export function Sidebar() {
   const { user, logout } = useAuthStore()
   const { theme, toggle } = useTheme()
   const navigate = useNavigate()
+
+  function hasPermission(permission: string | null) {
+    if (!permission) return true
+    return user?.permissions?.includes(permission) ?? false
+  }
 
   function handleLogout() {
     logout()
@@ -76,27 +96,20 @@ export function Sidebar() {
 
       <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
         <p className="text-sm text-zinc-900 dark:text-zinc-100 font-medium">{user?.name}</p>
-        <p className="text-xs text-zinc-500 capitalize">{user?.profile}</p>
+        <p className="text-xs text-zinc-500 capitalize">{user?.role}</p>
       </div>
 
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {[
-          { label: 'CENTRAL', items: mainNav },
-          ...(user?.profile === 'admin' ? [{ label: 'OPERAÇÃO', items: operacaoNav }] : []),
-          ...(user?.profile === 'admin' ? [{ label: 'RELATÓRIOS', items: relatoriosNav }] : []),
-          { label: user?.profile === 'admin' ? 'GESTÃO' : 'MENU', items: gestaoNav },
-          ...(user?.profile === 'admin' ? [{ label: 'ANÁLISE', items: analiseNav }] : []),
-          { label: 'SISTEMA', items: sistemaNav },
-        ].map((group) => (
-          <div key={group.label}>
-            {user?.profile === 'admin' && (
+        {navGroups.map((group) => {
+          const visibleItems = group.items.filter((item) => hasPermission(item.permission))
+          if (visibleItems.length === 0) return null
+
+          return (
+            <div key={group.label}>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 px-3 pt-3 pb-1">
                 {group.label}
               </p>
-            )}
-            {group.items
-              .filter((item) => !item.adminOnly || user?.profile === 'admin')
-              .map((item) => (
+              {visibleItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -113,8 +126,9 @@ export function Sidebar() {
                   {item.label}
                 </NavLink>
               ))}
-          </div>
-        ))}
+            </div>
+          )
+        })}
       </nav>
 
       <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 space-y-1">

@@ -2,13 +2,15 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { useAuthStore } from '../../domains/auth/auth.store'
 
 interface RoleRouteProps {
-  allowedProfiles: Array<'admin' | 'apontador'>
+  requiredPermissions: string[]
 }
 
-export function RoleRoute({ allowedProfiles }: RoleRouteProps) {
-  const user = useAuthStore((s) => s.user)
+export function RoleRoute({ requiredPermissions }: RoleRouteProps) {
+  const hasPermission = useAuthStore((s) => s.hasPermission)
 
-  if (!user || !allowedProfiles.includes(user.profile)) {
+  const allowed = requiredPermissions.every((p) => hasPermission(p))
+
+  if (!allowed) {
     return <Navigate to="/" replace />
   }
 

@@ -5,6 +5,7 @@ import { useSettingsStore } from '../../settings/stores/settings.store'
 
 export function CorrectionsPage() {
   const user = useAuthStore((s) => s.user)
+  const hasPermission = useAuthStore((s) => s.hasPermission)
   const { records, update, remove } = useRecordsStore()
   const { listarBairros, listarVias } = useSettingsStore()
 
@@ -24,7 +25,7 @@ export function CorrectionsPage() {
     if (data) filtrados = filtrados.filter((r) => r.date === data)
     if (bairroFiltro) filtrados = filtrados.filter((r) => r.bairro === bairroFiltro)
     if (viaFiltro) filtrados = filtrados.filter((r) => r.via === viaFiltro)
-    if (user?.profile === 'apontador') filtrados = filtrados.filter((r) => r.apontador === user.name)
+    if (!hasPermission('corrections:manage') && user) filtrados = filtrados.filter((r) => r.apontador === user.name)
     setResultados(filtrados)
     setEditId(null)
     setMsg('')
@@ -67,7 +68,7 @@ export function CorrectionsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-        {user?.profile === 'admin' ? 'Central de Correções' : 'Correções do Dia'}
+        {hasPermission('corrections:manage') ? 'Central de Correções' : 'Correções do Dia'}
       </h1>
 
       {msg && (
@@ -92,7 +93,7 @@ export function CorrectionsPage() {
       </div>
 
       {/* Resultados */}
-      {resultados.length > 0 && user?.profile === 'admin' && (
+      {resultados.length > 0 && hasPermission('corrections:manage') && (
         <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Correção em lote</h2>
           <div className="flex gap-2 items-center flex-wrap">
