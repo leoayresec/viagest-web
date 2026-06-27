@@ -28,11 +28,11 @@ export function RelatorioPDFPage() {
 
     if (tipoPDF === 'quantitativo_via') {
       if (!bairro || !via) { setErro('Selecione o bairro e a via.'); return }
-      filtrados = filtrados.filter((r) => r.bairro === bairro && r.via === via)
+      filtrados = filtrados.filter((r) => r.neighborhood === bairro && r.road === via)
     } else if (tipoPDF === 'redes_auxiliares') {
-      filtrados = filtrados.filter((r) => r.tipo === 'redes_auxiliares')
+      filtrados = filtrados.filter((r) => r.serviceType === 'redes_auxiliares')
     } else if (tipoPDF === 'rede_domiciliar') {
-      filtrados = filtrados.filter((r) => r.tipo === 'rede_domiciliar')
+      filtrados = filtrados.filter((r) => r.serviceType === 'rede_domiciliar')
     }
 
     if (filtrados.length === 0) {

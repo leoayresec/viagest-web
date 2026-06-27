@@ -3,7 +3,7 @@ import { FileSpreadsheet, Download, ChevronDown, ChevronRight } from 'lucide-rea
 import { useRecordsStore } from '../../records/stores/records.store'
 import { useSettingsStore } from '../../settings/stores/settings.store'
 import { fmtNum, fmtMoeda, metricasOperacionais } from '../../../core/utils/format'
-import type { Record as ViaGestRecord } from '../../../core/types/records'
+import type { ViaGestRecord } from '../../../core/types/records'
 
 type GeracaoTipo = 'uma_via' | 'todas_vias_bairro' | 'todas_vias_producao'
 
@@ -76,7 +76,7 @@ export function PlanilhaMedicaoPage() {
   const vias = listarVias(bairroSel)
 
   function carregarResumo() {
-    const filtrados = recordsDoPeriodo(records, mes, ano).filter((r) => !bairroFiltro || r.bairro === bairroFiltro)
+    const filtrados = recordsDoPeriodo(records, mes, ano).filter((r) => !bairroFiltro || r.neighborhood === bairroFiltro)
 
     if (!filtrados.length) {
       setMsgTipo('erro')
@@ -87,7 +87,7 @@ export function PlanilhaMedicaoPage() {
 
     const porVia = new Map<string, ViaGestRecord[]>()
     for (const r of filtrados) {
-      const chave = `${r.bairro} / ${r.via}`
+      const chave = `${r.neighborhood} / ${r.road}`
       if (!porVia.has(chave)) porVia.set(chave, [])
       porVia.get(chave)!.push(r)
     }
@@ -117,18 +117,18 @@ export function PlanilhaMedicaoPage() {
 
     if (geracaoTipo === 'uma_via') {
       if (!bairroSel || !viaSel) { setMsgTipo('erro'); setMsg('Selecione o bairro e a via.'); return }
-      const viaRecs = filtrados.filter((r) => r.bairro === bairroSel && r.via === viaSel)
+      const viaRecs = filtrados.filter((r) => r.neighborhood === bairroSel && r.road === viaSel)
       if (!viaRecs.length) { setMsgTipo('erro'); setMsg('Nenhum registro encontrado para esta via no período.'); return }
       setMsgTipo('sucesso')
       setMsg(`Planilha gerada para ${bairroSel} / ${viaSel} — ${viaRecs.length} registro(s). (Download simulado)`)
     } else if (geracaoTipo === 'todas_vias_bairro') {
       if (!bairroSel) { setMsgTipo('erro'); setMsg('Selecione o bairro.'); return }
-      const bairroRecs = filtrados.filter((r) => r.bairro === bairroSel)
+      const bairroRecs = filtrados.filter((r) => r.neighborhood === bairroSel)
       if (!bairroRecs.length) { setMsgTipo('erro'); setMsg('Nenhum registro encontrado para este bairro.'); return }
       setMsgTipo('sucesso')
       setMsg(`ZIP gerado para ${bairroSel} — ${bairroRecs.length} registro(s). (Download simulado)`)
     } else {
-      const producao = filtrados.filter((r) => !bairroFiltro || r.bairro === bairroFiltro)
+      const producao = filtrados.filter((r) => !bairroFiltro || r.neighborhood === bairroFiltro)
       if (!producao.length) { setMsgTipo('erro'); setMsg('Nenhum registro com produção no período.'); return }
       setMsgTipo('sucesso')
       setMsg(`ZIP gerado — ${producao.length} registro(s). (Download simulado)`)
@@ -140,7 +140,7 @@ export function PlanilhaMedicaoPage() {
       const mesStr = String(mes).padStart(2, '0')
       return r.date.startsWith(`${ano}-${mesStr}`)
     })
-    if (bairroSel && viaSel) return doPeriodo.filter((r) => r.bairro === bairroSel && r.via === viaSel)
+    if (bairroSel && viaSel) return doPeriodo.filter((r) => r.neighborhood === bairroSel && r.road === viaSel)
     return []
   })
 

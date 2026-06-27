@@ -1,4 +1,4 @@
-import type { Record as ViaGestRecord } from '../types/records'
+import type { ViaGestRecord } from '../types/records'
 import { toNum } from './format'
 
 export const DMT_PADRAO_KM = 30.0
@@ -138,7 +138,7 @@ export function estimativaCustosOperacionais(records: ViaGestRecord[]): { linhas
   }
 
   for (const r of records) {
-    const t = r.tipo
+    const t = r.serviceType
     const d = r.data
 
     if (t === 'redes_auxiliares') continue
@@ -209,14 +209,14 @@ export function estimativaCustosOperacionais(records: ViaGestRecord[]): { linhas
     }
 
     if (t === 'fresagem') {
-      const vol = (d.fresagemTrechos || []).reduce((s, tr) => s + toNum(tr.area ? toNum(tr.area) * toNum(tr.esp || 0.1) : toNum(tr.comp) * toNum(tr.larg) * toNum(tr.esp || 0.1)), 0)
+      const vol = (d.fresagemTrechos || []).reduce((s: number, tr: any) => s + toNum(tr.area ? toNum(tr.area) * toNum(tr.esp || 0.1) : toNum(tr.comp) * toNum(tr.larg) * toNum(tr.esp || 0.1)), 0)
       add('4.1.1', vol, 'Fresagem', 'Direto', 'Volume lançado')
       add('4.1.2', vol, 'Carga fresagem', 'Derivado', 'Volume fresado')
       add('4.1.3', vol * DMT_PADRAO_KM, 'Transporte fresagem', 'Derivado', 'Volume fresado x DMT')
     }
 
     if (t === 'remendo_profundo') {
-      const ton = (d.remendoTrechos || []).reduce((s, tr) => s + toNum(tr.ton), 0)
+      const ton = (d.remendoTrechos || []).reduce((s: number, tr: any) => s + toNum(tr.ton), 0)
       add('4.1.4', ton, 'Remendo profundo', 'Direto', 'Peso lançado')
       add('4.1.5', ton * DMT_PADRAO_KM, 'Transporte remendo profundo', 'Derivado', 'Toneladas x DMT')
     }
@@ -232,22 +232,22 @@ export function estimativaCustosOperacionais(records: ViaGestRecord[]): { linhas
     }
 
     if (t === 'subbase') {
-      const vol = (d.pavSubbase || []).reduce((s, tr) => s + toNum(tr.area ? toNum(tr.area) * toNum(tr.esp || 0.1) : toNum(tr.comp) * toNum(tr.larg) * toNum(tr.esp || 0.1)), 0)
+      const vol = (d.pavSubbase || []).reduce((s: number, tr: any) => s + toNum(tr.area ? toNum(tr.area) * toNum(tr.esp || 0.1) : toNum(tr.comp) * toNum(tr.larg) * toNum(tr.esp || 0.1)), 0)
       add('3.2.1', vol, 'Base/Sub-base', 'Direto', 'Volume lançado')
     }
 
     if (t === 'binder') {
-      const area = (d.pavBinder || []).reduce((s, tr) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
+      const area = (d.pavBinder || []).reduce((s: number, tr: any) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
       add('3.2.2', area, 'Execução da imprimação / Binder', 'Direto', 'Área lançada')
     }
 
     if (t === 'pintura_ligacao') {
-      const area = (d.pavPintura || []).reduce((s, tr) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
+      const area = (d.pavPintura || []).reduce((s: number, tr: any) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
       add('3.2.3', area, 'Pintura de ligação', 'Direto', 'Área lançada')
     }
 
     if (t === 'cbuq') {
-      const ton = (d.pavCbuq || []).reduce((s, tr) => s + toNum(tr.ton), 0)
+      const ton = (d.pavCbuq || []).reduce((s: number, tr: any) => s + toNum(tr.ton), 0)
       add('3.2.4', ton, 'CBUQ', 'Direto', 'Toneladas lançadas')
       add('3.2.5', ton * DMT_PADRAO_KM, 'CBUQ', 'Derivado', 'Toneladas x DMT padrão')
     }
@@ -313,6 +313,6 @@ export function estimativaCustosOperacionais(records: ViaGestRecord[]): { linhas
     if (a.Grupo !== b.Grupo) return a.Grupo.localeCompare(b.Grupo)
     return a.Código.localeCompare(b.Código)
   })
-  const total = linhas.reduce((s, l) => s + l.Total, 0)
+  const total = linhas.reduce((s: number, l: LinhaCusto) => s + l.Total, 0)
   return { linhas, total }
 }

@@ -1,4 +1,4 @@
-import type { Record as ViaGestRecord } from '../types/records'
+import type { ViaGestRecord } from '../types/records'
 
 export const TIPO_LABELS: Record<string, string> = {
   escavacao: 'Escavação',
@@ -117,9 +117,9 @@ export function metricasOperacionais(records: ViaGestRecord[]): MetricasOperacio
   const bairros = new Set<string>()
   const apontadores = new Set<string>()
   for (const r of records) {
-    if (r.bairro && r.via) vias.add(`${r.bairro}||${r.via}`)
-    if (r.bairro) bairros.add(r.bairro)
-    if (r.apontador) apontadores.add(r.apontador)
+    if (r.neighborhood && r.road) vias.add(`${r.neighborhood}||${r.road}`)
+    if (r.neighborhood) bairros.add(r.neighborhood)
+    if (r.recorder) apontadores.add(r.recorder)
   }
 
   const m: MetricasOperacionais = {
@@ -136,7 +136,7 @@ export function metricasOperacionais(records: ViaGestRecord[]): MetricasOperacio
   }
 
   for (const r of records) {
-    const t = r.tipo
+    const t = r.serviceType
     const d = r.data
     if (t === 'escavacao') m.escavacao_m3 += toNum(d.drenagens?.[0]?.escProf ? (toNum(d.drenagens[0].escComp) * toNum(d.drenagens[0].escLarg) * toNum(d.drenagens[0].escProf)) : 0)
     if (t === 'colchao_areia') m.colchao_m3 += toNum(d.drenagens?.[0]?.colProf ? (toNum(d.drenagens[0].colComp) * toNum(d.drenagens[0].colLarg) * toNum(d.drenagens[0].colProf)) : 0)
@@ -150,18 +150,18 @@ export function metricasOperacionais(records: ViaGestRecord[]): MetricasOperacio
     }
     if (t === 'pv') m.pv_un += toNum(d.pvs?.length || 1)
     if (t === 'bl') m.bl_un += toNum(d.bls?.length || toNum(d.bls?.[0]?.qtd))
-    if (t === 'subbase') m.subbase_m2 += (d.pavSubbase || []).reduce((s, tr) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
+    if (t === 'subbase') m.subbase_m2 += (d.pavSubbase || []).reduce((s: number, tr: any) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
     if (t === 'cbuq') {
-      const area = (d.pavCbuq || []).reduce((s, tr) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
-      const ton = (d.pavCbuq || []).reduce((s, tr) => s + toNum(tr.ton), 0)
+      const area = (d.pavCbuq || []).reduce((s: number, tr: any) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
+      const ton = (d.pavCbuq || []).reduce((s: number, tr: any) => s + toNum(tr.ton), 0)
       m.cbuq_m2 += area
       m.cbuq_t += ton
     }
-    if (t === 'binder') m.binder_m2 += (d.pavBinder || []).reduce((s, tr) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
-    if (t === 'pintura_ligacao') m.pintura_m2 += (d.pavPintura || []).reduce((s, tr) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
+    if (t === 'binder') m.binder_m2 += (d.pavBinder || []).reduce((s: number, tr: any) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
+    if (t === 'pintura_ligacao') m.pintura_m2 += (d.pavPintura || []).reduce((s: number, tr: any) => s + toNum(tr.area || (toNum(tr.comp) * toNum(tr.larg))), 0)
     if (t === 'tampao_70') m.tampao70_un += toNum(d.tampao70Qtd)
-    if (t === 'fresagem') m.fresagem_m3 += (d.fresagemTrechos || []).reduce((s, tr) => s + toNum(tr.area ? toNum(tr.area) * toNum(tr.esp || 0.1) : toNum(tr.comp) * toNum(tr.larg) * toNum(tr.esp || 0.1)), 0)
-    if (t === 'remendo_profundo') m.remendo_t += (d.remendoTrechos || []).reduce((s, tr) => s + toNum(tr.ton), 0)
+    if (t === 'fresagem') m.fresagem_m3 += (d.fresagemTrechos || []).reduce((s: number, tr: any) => s + toNum(tr.area ? toNum(tr.area) * toNum(tr.esp || 0.1) : toNum(tr.comp) * toNum(tr.larg) * toNum(tr.esp || 0.1)), 0)
+    if (t === 'remendo_profundo') m.remendo_t += (d.remendoTrechos || []).reduce((s: number, tr: any) => s + toNum(tr.ton), 0)
     if (t === 'limpeza') m.limpeza_m2 += toNum(d.limpezaComp) * toNum(d.limpezaLarg)
     if (t === 'urb') {
       const dir = d.urbDireito; const esq = d.urbEsquerdo
@@ -205,22 +205,22 @@ export function metricasOperacionais(records: ViaGestRecord[]): MetricasOperacio
 export function resumoRecord(r: ViaGestRecord, maxItens = 4): string {
   const d = r.data
   const partes: string[] = []
-  if (r.tipo === 'escavacao' && d.drenagens?.[0]) {
+  if (r.serviceType === 'escavacao' && d.drenagens?.[0]) {
     const dr = d.drenagens[0]
     if (toNum(dr.escComp)) partes.push(`Esc: ${fmtNum(dr.escComp, 'm')}x${fmtNum(dr.escLarg, 'm')}x${fmtNum(dr.escProf, 'm')}`)
   }
-  if (r.tipo === 'tubo') {
+  if (r.serviceType === 'tubo') {
     if (d.drenagens?.[0]?.tuboQtd) partes.push(`Tubo: ${fmtNum(d.drenagens[0].tuboQtd, 'un')}`)
     if (d.drenagens?.[0]?.diam) partes.push(`DN ${d.drenagens[0].diam}`)
   }
-  if (r.tipo === 'cbuq') {
-    const tot = (d.pavCbuq || []).reduce((s, t) => s + toNum(t.ton), 0)
+  if (r.serviceType === 'cbuq') {
+    const tot = (d.pavCbuq || []).reduce((s: number, t: any) => s + toNum(t.ton), 0)
     if (tot) partes.push(`CBUQ: ${fmtNum(tot, 't')}`)
   }
-  if (r.tipo === 'terrap' && toNum(d.terrapComp)) {
+  if (r.serviceType === 'terrap' && toNum(d.terrapComp)) {
     partes.push(`Terraplenagem: ${fmtNum(d.terrapComp, 'm')}x${fmtNum(d.terrapLarg, 'm')}`)
   }
-  if (r.tipo === 'limpeza' && toNum(d.limpezaComp)) {
+  if (r.serviceType === 'limpeza' && toNum(d.limpezaComp)) {
     partes.push(`Limpeza: ${fmtNum(d.limpezaComp, 'm')}x${fmtNum(d.limpezaLarg, 'm')}`)
   }
   return partes.length ? partes.slice(0, maxItens).join(' | ') : 'Sem medidas detalhadas'

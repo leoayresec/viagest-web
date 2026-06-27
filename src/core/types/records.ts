@@ -77,15 +77,15 @@ export interface RecordData {
   infoAdicionais?: string
 }
 
-export interface Record {
+export interface ViaGestRecord {
   id: string
   date: string
-  bairro: string
-  via: string
-  encarregado: string
-  apontador: string
-  tipo: ServiceType
-  data: RecordData
+  neighborhood: string
+  road: string
+  supervisor: string | null
+  recorder: string | null
+  serviceType: string
+  data: Record<string, any>
   createdAt: string
 }
 

@@ -1,53 +1,80 @@
 import { create } from 'zustand'
-import type { Record } from '../../../core/types/records'
+import { api } from '../../../core/api/client'
 
-const STORAGE_KEY = 'viagest_records'
-const SEQ_KEY = 'viagest_record_seq'
+export interface ApiRecord {
+  id: string
+  date: string
+  neighborhood: string
+  road: string
+  serviceType: string
+  supervisor: string | null
+  recorder: string | null
+  data: Record<string, any>
+  userId?: string | null
+  createdAt: string
+  user?: { id: string; name: string } | null
+}
+
+export type NewRecord = {
+  date: string
+  neighborhood: string
+  road: string
+  serviceType: string
+  supervisor?: string
+  recorder?: string
+  data: Record<string, any>
+}
 
 interface RecordsState {
-  records: Record[]
-  add: (r: Omit<Record, 'id' | 'createdAt'>) => void
-  update: (id: string, data: Partial<Record>) => void
-  remove: (id: string) => void
-  listByDate: (date: string) => Record[]
-  listByDateRange: (start: string, end: string) => Record[]
-  listByApontador: (apontador: string, date: string) => Record[]
-}
-
-function loadRecords(): Record[] {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
-}
-function saveRecords(r: Record[]) { localStorage.setItem(STORAGE_KEY, JSON.stringify(r)) }
-
-function nextId(): number {
-  const seq = parseInt(localStorage.getItem(SEQ_KEY) || '0', 10) + 1
-  localStorage.setItem(SEQ_KEY, String(seq))
-  return seq
+  records: ApiRecord[]
+  loading: boolean
+  error: string | null
+  fetchRecords: (params?: { date?: string; start?: string; end?: string; neighborhood?: string; road?: string; recorder?: string }) => Promise<void>
+  addBatch: (records: NewRecord[]) => Promise<boolean>
+  remove: (id: string) => Promise<void>
 }
 
 export const useRecordsStore = create<RecordsState>((set, get) => ({
-  records: loadRecords(),
+  records: [],
+  loading: false,
+  error: null,
 
-  add: (r) => {
-    const record: Record = { ...r, id: String(nextId()), createdAt: new Date().toISOString() }
-    const records = [...get().records, record]
-    saveRecords(records)
-    set({ records })
+  fetchRecords: async (params) => {
+    set({ loading: true, error: null })
+    try {
+      const query = new URLSearchParams()
+      if (params?.date) query.set('date', params.date)
+      if (params?.start) query.set('start', params.start)
+      if (params?.end) query.set('end', params.end)
+      if (params?.neighborhood) query.set('neighborhood', params.neighborhood)
+      if (params?.road) query.set('road', params.road)
+      if (params?.recorder) query.set('recorder', params.recorder)
+
+      const qs = query.toString()
+      const data = await api.get<ApiRecord[]>(`/records${qs ? `?${qs}` : ''}`)
+      set({ records: data, loading: false })
+    } catch (err: any) {
+      set({ error: err.message || 'Erro ao carregar registros.', loading: false })
+    }
   },
 
-  update: (id, data) => {
-    const records = get().records.map((r) => (r.id === id ? { ...r, ...data } : r))
-    saveRecords(records)
-    set({ records })
+  addBatch: async (records) => {
+    set({ error: null })
+    try {
+      await api.post('/records/batch', { records })
+      return true
+    } catch (err: any) {
+      set({ error: err.message || 'Erro ao salvar registros.' })
+      return false
+    }
   },
 
-  remove: (id) => {
-    const records = get().records.filter((r) => r.id !== id)
-    saveRecords(records)
-    set({ records })
+  remove: async (id) => {
+    try {
+      await api.delete(`/records/${id}`)
+      set({ records: get().records.filter((r) => r.id !== id) })
+    } catch (err: any) {
+      set({ error: err.message || 'Erro ao excluir registro.' })
+    }
   },
-
-  listByDate: (date) => get().records.filter((r) => r.date === date),
-  listByDateRange: (start, end) => get().records.filter((r) => r.date >= start && r.date <= end),
-  listByApontador: (apontador, date) => get().records.filter((r) => r.apontador === apontador && r.date === date),
 }))

@@ -19,9 +19,9 @@ function calcMetricas(registros: any[]) {
 
   for (const r of registros) {
     const d = r.data || {}
-    bairros.add(r.bairro)
-    vias.add(r.via)
-    if (r.apontador) apontadores.add(r.apontador)
+    bairros.add(r.neighborhood)
+    vias.add(r.road)
+    if (r.recorder) apontadores.add(r.recorder)
     if (d.drenagens) {
       for (const dr of d.drenagens) {
         if (dr.escComp && dr.escLarg && dr.escProf) escM3 += dr.escComp * dr.escLarg * dr.escProf
@@ -68,7 +68,7 @@ export function DashboardPage() {
 
   const registrosFiltrados = isAdmin
     ? records.filter((r) => r.date === dataFoco)
-    : records.filter((r) => r.date === dataFoco && r.apontador === user?.name)
+    : records.filter((r) => r.date === dataFoco && r.recorder === user?.name)
 
   const metricas = calcMetricas(registrosFiltrados)
   const producao = [
@@ -91,7 +91,7 @@ export function DashboardPage() {
     metricas.limpeza_m2 > 0 && { label: 'Limpeza', valor: fmt(metricas.limpeza_m2) + ' m²' },
   ].filter(Boolean) as { label: string; valor: string }[]
 
-  const frentes = [...new Set(registrosFiltrados.map((r) => `${r.bairro} / ${r.via}`))].sort()
+  const frentes = [...new Set(registrosFiltrados.map((r) => `${r.neighborhood} / ${r.road}`))].sort()
 
   return (
     <div className="space-y-6">

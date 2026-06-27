@@ -4,7 +4,7 @@ import { useAuthStore } from '../../auth/auth.store'
 import { useRecordsStore } from '../../records/stores/records.store'
 import { useSettingsStore } from '../../settings/stores/settings.store'
 import { labelTipo, fmtNum, toNum, dataBr } from '../../../core/utils/format'
-import type { Record as ViaGestRecord } from '../../../core/types/records'
+import type { ApiRecord } from '../../records/stores/records.store'
 
 type TipoRelatorio = 'diario' | 'geral' | 'individual'
 
@@ -36,17 +36,17 @@ const CAT_EMOJIS: Record<string, string> = {
   info_adicionais: '📝',
 }
 
-function gerarLinhasRecord(r: ViaGestRecord): string[] {
+function gerarLinhasRecord(r: ApiRecord): string[] {
   const d = r.data
   const linhas: string[] = []
 
-  if (r.tipo === 'limpeza') {
+  if (r.serviceType === 'limpeza') {
     if (toNum(d.limpezaComp)) linhas.push(`• Comprimento: ${fmtNum(d.limpezaComp, 'm')}`)
     if (toNum(d.limpezaLarg)) linhas.push(`• Largura: ${fmtNum(d.limpezaLarg, 'm')}`)
     if (d.obsLimpeza) linhas.push(`• Obs: ${d.obsLimpeza}`)
   }
 
-  if (r.tipo === 'escavacao' || r.tipo === 'colchao_areia' || r.tipo === 'tubo' || r.tipo === 'manta_bidim' || r.tipo === 'aterro') {
+  if (r.serviceType === 'escavacao' || r.serviceType === 'colchao_areia' || r.serviceType === 'tubo' || r.serviceType === 'manta_bidim' || r.serviceType === 'aterro') {
     for (const dr of d.drenagens || []) {
       if (toNum(dr.escComp)) {
         const vol = toNum(dr.escComp) * toNum(dr.escLarg) * toNum(dr.escProf)
@@ -69,12 +69,12 @@ function gerarLinhasRecord(r: ViaGestRecord): string[] {
     }
   }
 
-  if (r.tipo === 'motor') {
+  if (r.serviceType === 'motor') {
     if (toNum(d.motorbombaMin)) linhas.push(`• Motorbomba: ${fmtNum(d.motorbombaMin, 'min')}`)
     if (d.obsMotorbomba) linhas.push(`• Obs: ${d.obsMotorbomba}`)
   }
 
-  if (r.tipo === 'pv' || r.tipo === 'bl' || r.tipo === 'espinha_bl') {
+  if (r.serviceType === 'pv' || r.serviceType === 'bl' || r.serviceType === 'espinha_bl') {
     if (d.pvs?.length) {
       for (const pv of d.pvs) {
         if (pv.num) linhas.push(`• PV ${pv.num}${pv.tam ? ` (${pv.tam})` : ''}${pv.status ? ` - ${pv.status}` : ''}`)
@@ -98,7 +98,7 @@ function gerarLinhasRecord(r: ViaGestRecord): string[] {
     if (d.obsPvbl) linhas.push(`• Obs: ${d.obsPvbl}`)
   }
 
-  if (r.tipo === 'terrap') {
+  if (r.serviceType === 'terrap') {
     if (toNum(d.terrapComp)) {
       const vol = toNum(d.terrapComp) * toNum(d.terrapLarg) * toNum(d.terrapProf || 0.2)
       linhas.push(`• Terraplenagem: ${fmtNum(vol, 'm³')}`)
@@ -106,8 +106,8 @@ function gerarLinhasRecord(r: ViaGestRecord): string[] {
     if (d.obsTerrap) linhas.push(`• Obs: ${d.obsTerrap}`)
   }
 
-  if (r.tipo === 'subbase' || r.tipo === 'cbuq' || r.tipo === 'binder' || r.tipo === 'pintura_ligacao') {
-    const trechos = r.tipo === 'subbase' ? d.pavSubbase : r.tipo === 'cbuq' ? d.pavCbuq : r.tipo === 'binder' ? d.pavBinder : d.pavPintura
+  if (r.serviceType === 'subbase' || r.serviceType === 'cbuq' || r.serviceType === 'binder' || r.serviceType === 'pintura_ligacao') {
+    const trechos = r.serviceType === 'subbase' ? d.pavSubbase : r.serviceType === 'cbuq' ? d.pavCbuq : r.serviceType === 'binder' ? d.pavBinder : d.pavPintura
     let totalArea = 0; let totalTon = 0
     for (const t of trechos || []) {
       totalArea += toNum(t.area || (toNum(t.comp) * toNum(t.larg)))
@@ -118,7 +118,7 @@ function gerarLinhasRecord(r: ViaGestRecord): string[] {
     if (d.obsPav) linhas.push(`• Obs: ${d.obsPav}`)
   }
 
-  if (r.tipo === 'urb' || r.tipo === 'demolicao_calcada' || r.tipo === 'demolicao_meiofio' || r.tipo === 'linha_agua') {
+  if (r.serviceType === 'urb' || r.serviceType === 'demolicao_calcada' || r.serviceType === 'demolicao_meiofio' || r.serviceType === 'linha_agua') {
     let calcada = toNum(d.demolicaoCalcada)
     let meioFio = toNum(d.demolicaoMeiofio)
     let linhaAgua = toNum(d.demolicaoLinhaAgua)
@@ -138,18 +138,18 @@ function gerarLinhasRecord(r: ViaGestRecord): string[] {
     if (d.obsUrb) linhas.push(`• Obs: ${d.obsUrb}`)
   }
 
-  if (r.tipo === 'fresagem' || r.tipo === 'remendo_profundo') {
-    const trechos = r.tipo === 'fresagem' ? d.fresagemTrechos : d.remendoTrechos
+  if (r.serviceType === 'fresagem' || r.serviceType === 'remendo_profundo') {
+    const trechos = r.serviceType === 'fresagem' ? d.fresagemTrechos : d.remendoTrechos
     let total = 0
     for (const t of trechos || []) {
-      if (r.tipo === 'fresagem') total += toNum(t.area ? toNum(t.area) * toNum(t.esp || 0.1) : toNum(t.comp) * toNum(t.larg) * toNum(t.esp || 0.1))
+      if (r.serviceType === 'fresagem') total += toNum(t.area ? toNum(t.area) * toNum(t.esp || 0.1) : toNum(t.comp) * toNum(t.larg) * toNum(t.esp || 0.1))
       else total += toNum(t.ton)
     }
-    if (total > 0) linhas.push(`• ${r.tipo === 'fresagem' ? 'Fresagem' : 'Remendo profundo'}: ${fmtNum(total, r.tipo === 'fresagem' ? 'm³' : 't')}`)
+    if (total > 0) linhas.push(`• ${r.serviceType === 'fresagem' ? 'Fresagem' : 'Remendo profundo'}: ${fmtNum(total, r.serviceType === 'fresagem' ? 'm³' : 't')}`)
     if (d.obsRecuperacao) linhas.push(`• Obs: ${d.obsRecuperacao}`)
   }
 
-  if (r.tipo === 'redes_auxiliares') {
+  if (r.serviceType === 'redes_auxiliares') {
     for (const ra of d.redesAux || []) {
       const partes: string[] = []
       if (toNum(ra.escProf)) {
@@ -175,23 +175,23 @@ function gerarLinhasRecord(r: ViaGestRecord): string[] {
     }
   }
 
-  if (r.tipo === 'rede_domiciliar') {
+  if (r.serviceType === 'rede_domiciliar') {
     if (toNum(d.redeDomiciliarQtd)) linhas.push(`• Ligações domiciliares: ${fmtNum(d.redeDomiciliarQtd, 'un')}`)
   }
 
-  if (r.tipo === 'info_adicionais' && d.infoAdicionais) {
+  if (r.serviceType === 'info_adicionais' && d.infoAdicionais) {
     linhas.push(`• ${d.infoAdicionais}`)
   }
 
   return linhas
 }
 
-function gerarTextoWhatsApp(records: ViaGestRecord[], dataTxt: string): string {
+function gerarTextoWhatsApp(records: ApiRecord[], dataTxt: string): string {
   if (!records.length) return 'Nenhum registro encontrado para o período.'
 
-  const grupos = new Map<string, ViaGestRecord[]>()
+  const grupos = new Map<string, ApiRecord[]>()
   for (const r of records) {
-    const chave = `${r.bairro}||${r.via}||${r.encarregado}`
+    const chave = `${r.neighborhood}||${r.road}||${r.supervisor}`
     if (!grupos.has(chave)) grupos.set(chave, [])
     grupos.get(chave)!.push(r)
   }
@@ -206,10 +206,10 @@ function gerarTextoWhatsApp(records: ViaGestRecord[], dataTxt: string): string {
     linhas.push(`👷 ENCARREGADO: ${encarregado}`)
     linhas.push('')
 
-    const porTipo = new Map<string, ViaGestRecord[]>()
+    const porTipo = new Map<string, ApiRecord[]>()
     for (const r of grupo) {
-      if (!porTipo.has(r.tipo)) porTipo.set(r.tipo, [])
-      porTipo.get(r.tipo)!.push(r)
+      if (!porTipo.has(r.serviceType)) porTipo.set(r.serviceType, [])
+      porTipo.get(r.serviceType)!.push(r)
     }
 
     for (const [tipo, recs] of porTipo) {
@@ -248,10 +248,10 @@ export function RelatorioWhatsAppPage() {
     setGerou(true)
     setCopiado(false)
 
-    let filtrados: ViaGestRecord[] = []
+    let filtrados: ApiRecord[] = []
 
     if (!hasPermission('reports:controle') && user) {
-      filtrados = records.filter((r) => r.apontador === user.name && r.date === dataIni)
+      filtrados = records.filter((r) => r.recorder === user.name && r.date === dataIni)
     } else {
       if (tipoRel === 'diario') {
         filtrados = records.filter((r) => r.date === dataIni)
@@ -259,7 +259,7 @@ export function RelatorioWhatsAppPage() {
         filtrados = records.filter((r) => r.date >= dataIni && r.date <= dataFim)
       } else if (tipoRel === 'individual') {
         if (!apontadorSel) { setTexto('Selecione um apontador.'); return }
-        filtrados = records.filter((r) => r.apontador === apontadorSel && r.date >= dataIni && r.date <= dataFim)
+        filtrados = records.filter((r) => r.recorder === apontadorSel && r.date >= dataIni && r.date <= dataFim)
       }
     }
 

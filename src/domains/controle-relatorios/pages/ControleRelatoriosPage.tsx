@@ -16,14 +16,15 @@ export function ControleRelatoriosPage() {
   const [statusList, setStatusList] = useState<ApontadorStatus[]>([])
 
   const { listarEquipe } = useSettingsStore()
-  const { listByDate } = useRecordsStore()
+  const { fetchRecords } = useRecordsStore()
 
-  function handleCarregar() {
+  async function handleCarregar() {
     const apontadores = listarEquipe('apontador')
-    const records = listByDate(data)
+    await fetchRecords({ date: data })
+    const records = useRecordsStore.getState().records
 
     const list: ApontadorStatus[] = apontadores.map((nome) => {
-      const doApontador = records.filter((r) => r.apontador === nome)
+      const doApontador = records.filter((r) => r.recorder === nome)
       const tempos = doApontador.map((r) => r.createdAt).filter(Boolean).sort()
       return {
         nome,

@@ -72,9 +72,9 @@ export function AvancObraPage() {
     if (!carregado) return []
     const viasSet = new Set<string>()
     for (const r of records) {
-      const passaBairro = !bairroFiltro || r.bairro === bairroFiltro
-      const passaVia = !viaFiltro || r.via === viaFiltro
-      const viaInfo = vias.find((v) => v.bairro === r.bairro && v.nome === r.via)
+      const passaBairro = !bairroFiltro || r.neighborhood === bairroFiltro
+      const passaVia = !viaFiltro || r.road === viaFiltro
+      const viaInfo = vias.find((v) => v.bairro === r.neighborhood && v.nome === r.road)
       const passaStatus = viaInfo
         ? (viaInfo.status === 'ativa' && filtroAtivas) ||
           (viaInfo.status === 'encerrada' && filtroEncerradas) ||
@@ -82,7 +82,7 @@ export function AvancObraPage() {
           (viaInfo.status === 'em_andamento' && filtroAtivas)
         : filtroAtivas
       if (passaBairro && passaVia && passaStatus) {
-        viasSet.add(`${r.bairro}||${r.via}`)
+        viasSet.add(`${r.neighborhood}||${r.road}`)
       }
     }
     return Array.from(viasSet).sort()
@@ -91,7 +91,7 @@ export function AvancObraPage() {
   const registroPorChave = useMemo(() => {
     const map = new Map<string, typeof records>()
     for (const r of records) {
-      const chave = `${r.bairro}||${r.via}`
+      const chave = `${r.neighborhood}||${r.road}`
       if (!map.has(chave)) map.set(chave, [])
       map.get(chave)!.push(r)
     }
@@ -123,13 +123,13 @@ export function AvancObraPage() {
 
       for (const r of recs) {
         const d = r.data
-        if (r.tipo === 'tubo') {
+        if (r.serviceType === 'tubo') {
           totalTubos += toNum(d.drenagens?.[0]?.tuboQtd)
         }
-        if (r.tipo === 'terrap') {
+        if (r.serviceType === 'terrap') {
           compTerrap += toNum(d.terrapComp)
         }
-        if (r.tipo === 'urb') {
+        if (r.serviceType === 'urb') {
           const dir = d.urbDireito; const esq = d.urbEsquerdo
           calcadaM2 += toNum(dir?.calcada) + toNum(esq?.calcada)
           meioFioM += toNum(dir?.meioFio) + toNum(esq?.meioFio)

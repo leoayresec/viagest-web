@@ -7,15 +7,15 @@ import { fmtNum, dataBr } from '../../../core/utils/format'
 interface PrateleiraItem {
   id: string
   data: string
-  bairro: string
-  via: string
+  neighborhood: string
+  road: string
   grupo: string
   item: string
   unidade: string
   quantidade: number
   motivo: string
-  apontador: string
-  encarregado: string
+  recorder: string
+  supervisor: string
 }
 
 const PV_TAMANHOS_PADRAO = ['1.40', '1.50', '1.60', '1.80']
@@ -46,8 +46,8 @@ export function PrateleiraPage() {
   const itensPrateleira = useMemo((): PrateleiraItem[] => {
     if (!carregado) return []
     const filtrados = records.filter((r) => {
-      if (filtroBairro && r.bairro !== filtroBairro) return false
-      if (filtroVia && r.via !== filtroVia) return false
+      if (filtroBairro && r.neighborhood !== filtroBairro) return false
+      if (filtroVia && r.road !== filtroVia) return false
       if (dataInicio && r.date < dataInicio) return false
       if (dataFim && r.date > dataFim) return false
       return true
@@ -56,61 +56,61 @@ export function PrateleiraPage() {
     const resultado: PrateleiraItem[] = []
 
     for (const r of filtrados) {
-      if (r.tipo === 'redes_auxiliares') {
-        const totalTubos = (r.data.redesAux || []).reduce((s, ra) => {
-          return s + (ra.tubos || []).reduce((st, t) => st + (t.comp || 0), 0)
+      if (r.serviceType === 'redes_auxiliares') {
+        const totalTubos = (r.data.redesAux || []).reduce((s: number, ra: any) => {
+          return s + (ra.tubos || []).reduce((st: number, t: any) => st + (t.comp || 0), 0)
         }, 0)
         resultado.push({
           id: `${r.id}-redes`,
           data: r.date,
-          bairro: r.bairro,
-          via: r.via,
+          neighborhood: r.neighborhood,
+          road: r.road,
           grupo: 'Redes Auxiliares',
           item: 'Rede auxiliar (escavação, colchão, tubos, caixas)',
           unidade: 'm',
           quantidade: totalTubos || 1,
           motivo: 'Item fora da medição financeira',
-          apontador: r.apontador || '—',
-          encarregado: r.encarregado || '—',
+          recorder: r.recorder || '—',
+          supervisor: r.supervisor || '—',
         })
       }
 
-      if (r.tipo === 'rede_domiciliar') {
+      if (r.serviceType === 'rede_domiciliar') {
         resultado.push({
           id: `${r.id}-domiciliar`,
           data: r.date,
-          bairro: r.bairro,
-          via: r.via,
+          neighborhood: r.neighborhood,
+          road: r.road,
           grupo: 'Rede Domiciliar',
           item: 'Ligação domiciliar',
           unidade: 'un',
           quantidade: r.data.redeDomiciliarQtd || 1,
           motivo: 'Item fora da medição financeira',
-          apontador: r.apontador || '—',
-          encarregado: r.encarregado || '—',
+          recorder: r.recorder || '—',
+          supervisor: r.supervisor || '—',
         })
       }
 
-      if (r.tipo === 'tubo') {
+      if (r.serviceType === 'tubo') {
         const diam = r.data.drenagens?.[0]?.diam
         if (diam === '1500') {
           resultado.push({
             id: `${r.id}-tubo1500`,
             data: r.date,
-            bairro: r.bairro,
-            via: r.via,
+            neighborhood: r.neighborhood,
+            road: r.road,
             grupo: 'Drenagem',
             item: 'Tubo DN 1500',
             unidade: 'm',
             quantidade: r.data.drenagens?.[0]?.tuboQtd || 1,
             motivo: 'Diâmetro sem preço cadastrado',
-            apontador: r.apontador || '—',
-            encarregado: r.encarregado || '—',
+            recorder: r.recorder || '—',
+            supervisor: r.supervisor || '—',
           })
         }
       }
 
-      if (r.tipo === 'pv') {
+      if (r.serviceType === 'pv') {
         const pvs = r.data.pvs || []
         for (let i = 0; i < pvs.length; i++) {
           const pv = pvs[i]
@@ -126,21 +126,21 @@ export function PrateleiraPage() {
             resultado.push({
               id: `${r.id}-pv-${i}`,
               data: r.date,
-              bairro: r.bairro,
-              via: r.via,
+              neighborhood: r.neighborhood,
+              road: r.road,
               grupo: 'PV / BL',
               item: 'PV não compatível',
               unidade: 'un',
               quantidade: 1,
               motivo: motivos.join(' | '),
-              apontador: r.apontador || '—',
-              encarregado: r.encarregado || '—',
+              recorder: r.recorder || '—',
+              supervisor: r.supervisor || '—',
             })
           }
         }
       }
 
-      if (r.tipo === 'bl') {
+      if (r.serviceType === 'bl') {
         const bls = r.data.bls || []
         for (let i = 0; i < bls.length; i++) {
           const bl = bls[i]
@@ -150,15 +150,15 @@ export function PrateleiraPage() {
             resultado.push({
               id: `${r.id}-bl-${i}`,
               data: r.date,
-              bairro: r.bairro,
-              via: r.via,
+              neighborhood: r.neighborhood,
+              road: r.road,
               grupo: 'PV / BL',
               item: 'BL não finalizado',
               unidade: 'un',
               quantidade: qtd,
               motivo: `Status: ${bl.status || '—'}`,
-              apontador: r.apontador || '—',
-              encarregado: r.encarregado || '—',
+              recorder: r.recorder || '—',
+              supervisor: r.supervisor || '—',
             })
           }
         }
@@ -373,13 +373,13 @@ export function PrateleiraPage() {
                   {itensPrateleira.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
                       <td className="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">{dataBr(item.data)}</td>
-                      <td className="px-4 py-2 text-gray-900 dark:text-white">{item.bairro}</td>
-                      <td className="px-4 py-2 text-gray-900 dark:text-white">{item.via}</td>
+                      <td className="px-4 py-2 text-gray-900 dark:text-white">{item.neighborhood}</td>
+                      <td className="px-4 py-2 text-gray-900 dark:text-white">{item.road}</td>
                       <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{item.item}</td>
                       <td className="px-4 py-2 text-right text-gray-900 dark:text-white font-medium">{fmtNum(item.quantidade)}</td>
                       <td className="px-4 py-2 text-gray-600 dark:text-gray-400 max-w-xs truncate">{item.motivo}</td>
-                      <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{item.apontador}</td>
-                      <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{item.encarregado}</td>
+                      <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{item.recorder}</td>
+                      <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{item.supervisor}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -58,8 +58,8 @@ export function EstimativaFinanceiraPage() {
     if (dataInicioVal && dataFimVal) {
       filtrados = filtrados.filter((r) => r.date >= dataInicioVal && r.date <= dataFimVal)
     }
-    if (bairroFiltro) filtrados = filtrados.filter((r) => r.bairro === bairroFiltro)
-    if (viaFiltro) filtrados = filtrados.filter((r) => r.via === viaFiltro)
+    if (bairroFiltro) filtrados = filtrados.filter((r) => r.neighborhood === bairroFiltro)
+    if (viaFiltro) filtrados = filtrados.filter((r) => r.road === viaFiltro)
     return filtrados
   }, [records, dataInicioVal, dataFimVal, bairroFiltro, viaFiltro, carregado])
 
