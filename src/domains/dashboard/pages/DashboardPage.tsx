@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRecordsStore } from '../../records/stores/records.store'
 import { useAuthStore } from '../../auth/auth.store'
+import { getRecordNeighborhood, getRecordRoadName } from '../../../core/types/records'
 
 function fmt(v: number | undefined): string {
   if (v == null || v <= 0) return '-'
@@ -19,8 +20,8 @@ function calcMetricas(registros: any[]) {
 
   for (const r of registros) {
     const d = r.data || {}
-    bairros.add(r.neighborhood)
-    vias.add(r.road)
+    bairros.add(getRecordNeighborhood(r))
+    vias.add(getRecordRoadName(r))
     if (r.recorder) apontadores.add(r.recorder)
     if (d.drenagens) {
       for (const dr of d.drenagens) {
@@ -91,7 +92,7 @@ export function DashboardPage() {
     metricas.limpeza_m2 > 0 && { label: 'Limpeza', valor: fmt(metricas.limpeza_m2) + ' m²' },
   ].filter(Boolean) as { label: string; valor: string }[]
 
-  const frentes = [...new Set(registrosFiltrados.map((r) => `${r.neighborhood} / ${r.road}`))].sort()
+  const frentes = [...new Set(registrosFiltrados.map((r) => `${getRecordNeighborhood(r)} / ${getRecordRoadName(r)}`))].sort()
 
   return (
     <div className="space-y-6">

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuthStore } from '../../auth/auth.store'
 import { useRecordsStore } from '../../records/stores/records.store'
 import { useSettingsStore } from '../../settings/stores/settings.store'
+import { getRecordNeighborhood, getRecordRoadName, getRecordSupervisorName, getRecordRecorderName } from '../../../core/types/records'
 
 export function CorrectionsPage() {
   const user = useAuthStore((s) => s.user)
@@ -23,9 +24,9 @@ export function CorrectionsPage() {
   function handleBuscar() {
     let filtrados = records
     if (data) filtrados = filtrados.filter((r) => r.date === data)
-    if (bairroFiltro) filtrados = filtrados.filter((r) => r.neighborhood === bairroFiltro)
-    if (viaFiltro) filtrados = filtrados.filter((r) => r.road === viaFiltro)
-    if (!hasPermission('corrections:manage') && user) filtrados = filtrados.filter((r) => r.recorder === user.name)
+    if (bairroFiltro) filtrados = filtrados.filter((r) => getRecordNeighborhood(r) === bairroFiltro)
+    if (viaFiltro) filtrados = filtrados.filter((r) => getRecordRoadName(r) === viaFiltro)
+    if (!hasPermission('corrections:manage') && user) filtrados = filtrados.filter((r) => getRecordRecorderName(r) === user.name)
     setResultados(filtrados)
     setEditId(null)
     setMsg('')
@@ -115,9 +116,9 @@ export function CorrectionsPage() {
                   <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Editando #{r.id}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                     <input type="date" value={editData?.date || ''} onChange={(e) => setEditData({ ...editData, date: e.target.value })} className="px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500" />
-                    <input type="text" value={editData?.neighborhood || ''} onChange={(e) => setEditData({ ...editData, neighborhood: e.target.value })} className="px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500" />
-                    <input type="text" value={editData?.road || ''} onChange={(e) => setEditData({ ...editData, road: e.target.value })} className="px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500" />
-                    <input type="text" value={editData?.supervisor || ''} onChange={(e) => setEditData({ ...editData, supervisor: e.target.value })} className="px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500" />
+                    <input type="text" value={getRecordNeighborhood(editData) || ''} onChange={(e) => setEditData({ ...editData, neighborhood: e.target.value })} className="px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500" />
+                    <input type="text" value={getRecordRoadName(editData) || ''} onChange={(e) => setEditData({ ...editData, road: e.target.value })} className="px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500" />
+                    <input type="text" value={getRecordSupervisorName(editData) || ''} onChange={(e) => setEditData({ ...editData, supervisor: e.target.value })} className="px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500" />
                   </div>
                   <div className="flex gap-2">
                     <button onClick={handleSalvarEdicao} className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-xs rounded hover:bg-emerald-200 dark:hover:bg-emerald-900/60">Salvar</button>
@@ -127,8 +128,8 @@ export function CorrectionsPage() {
               ) : (
                 <div className="flex items-start justify-between gap-4">
                   <div className="text-sm text-zinc-700 dark:text-zinc-300 space-y-0.5">
-                    <p className="font-medium text-zinc-900 dark:text-zinc-100">#{r.id} — {r.date} | {r.neighborhood} / {r.road}</p>
-                    <p className="text-xs text-zinc-500">Supervisor: {r.supervisor} | Apontador: {r.recorder} | Tipo: {r.serviceType}</p>
+                    <p className="font-medium text-zinc-900 dark:text-zinc-100">#{r.id} — {r.date} | {getRecordNeighborhood(r)} / {getRecordRoadName(r)}</p>
+                    <p className="text-xs text-zinc-500">Supervisor: {getRecordSupervisorName(r)} | Apontador: {getRecordRecorderName(r)} | Tipo: {r.serviceType}</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <button onClick={() => handleEditar(r)} className="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 text-xs rounded hover:bg-zinc-300 dark:hover:bg-zinc-600">Editar</button>

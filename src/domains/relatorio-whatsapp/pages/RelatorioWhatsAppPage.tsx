@@ -5,6 +5,7 @@ import { useRecordsStore } from '../../records/stores/records.store'
 import { useSettingsStore } from '../../settings/stores/settings.store'
 import { labelTipo, fmtNum, toNum, dataBr } from '../../../core/utils/format'
 import type { ApiRecord } from '../../records/stores/records.store'
+import { getRecordNeighborhood, getRecordRoadName, getRecordSupervisorName, getRecordRecorderName } from '../../../core/types/records'
 
 type TipoRelatorio = 'diario' | 'geral' | 'individual'
 
@@ -191,7 +192,7 @@ function gerarTextoWhatsApp(records: ApiRecord[], dataTxt: string): string {
 
   const grupos = new Map<string, ApiRecord[]>()
   for (const r of records) {
-    const chave = `${r.neighborhood}||${r.road}||${r.supervisor}`
+    const chave = `${getRecordNeighborhood(r)}||${getRecordRoadName(r)}||${getRecordSupervisorName(r)}`
     if (!grupos.has(chave)) grupos.set(chave, [])
     grupos.get(chave)!.push(r)
   }
@@ -251,7 +252,7 @@ export function RelatorioWhatsAppPage() {
     let filtrados: ApiRecord[] = []
 
     if (!hasPermission('reports:controle') && user) {
-      filtrados = records.filter((r) => r.recorder === user.name && r.date === dataIni)
+      filtrados = records.filter((r) => getRecordRecorderName(r) === user.name && r.date === dataIni)
     } else {
       if (tipoRel === 'diario') {
         filtrados = records.filter((r) => r.date === dataIni)
@@ -259,7 +260,7 @@ export function RelatorioWhatsAppPage() {
         filtrados = records.filter((r) => r.date >= dataIni && r.date <= dataFim)
       } else if (tipoRel === 'individual') {
         if (!apontadorSel) { setTexto('Selecione um apontador.'); return }
-        filtrados = records.filter((r) => r.recorder === apontadorSel && r.date >= dataIni && r.date <= dataFim)
+        filtrados = records.filter((r) => getRecordRecorderName(r) === apontadorSel && r.date >= dataIni && r.date <= dataFim)
       }
     }
 

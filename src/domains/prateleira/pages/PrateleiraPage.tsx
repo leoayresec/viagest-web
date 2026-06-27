@@ -3,6 +3,7 @@ import { PackageSearch, Calendar, Download, Info, BarChart3, ListTree, Table } f
 import { useRecordsStore } from '../../records/stores/records.store'
 import { useSettingsStore } from '../../settings/stores/settings.store'
 import { fmtNum, dataBr } from '../../../core/utils/format'
+import { getRecordNeighborhood, getRecordRoadName, getRecordSupervisorName, getRecordRecorderName } from '../../../core/types/records'
 
 interface PrateleiraItem {
   id: string
@@ -46,8 +47,8 @@ export function PrateleiraPage() {
   const itensPrateleira = useMemo((): PrateleiraItem[] => {
     if (!carregado) return []
     const filtrados = records.filter((r) => {
-      if (filtroBairro && r.neighborhood !== filtroBairro) return false
-      if (filtroVia && r.road !== filtroVia) return false
+      if (filtroBairro && getRecordNeighborhood(r) !== filtroBairro) return false
+      if (filtroVia && getRecordRoadName(r) !== filtroVia) return false
       if (dataInicio && r.date < dataInicio) return false
       if (dataFim && r.date > dataFim) return false
       return true
@@ -63,15 +64,15 @@ export function PrateleiraPage() {
         resultado.push({
           id: `${r.id}-redes`,
           data: r.date,
-          neighborhood: r.neighborhood,
-          road: r.road,
+          neighborhood: getRecordNeighborhood(r),
+          road: getRecordRoadName(r),
           grupo: 'Redes Auxiliares',
           item: 'Rede auxiliar (escavação, colchão, tubos, caixas)',
           unidade: 'm',
           quantidade: totalTubos || 1,
           motivo: 'Item fora da medição financeira',
-          recorder: r.recorder || '—',
-          supervisor: r.supervisor || '—',
+          recorder: getRecordRecorderName(r) || '—',
+          supervisor: getRecordSupervisorName(r) || '—',
         })
       }
 
@@ -79,15 +80,15 @@ export function PrateleiraPage() {
         resultado.push({
           id: `${r.id}-domiciliar`,
           data: r.date,
-          neighborhood: r.neighborhood,
-          road: r.road,
+          neighborhood: getRecordNeighborhood(r),
+          road: getRecordRoadName(r),
           grupo: 'Rede Domiciliar',
           item: 'Ligação domiciliar',
           unidade: 'un',
           quantidade: r.data.redeDomiciliarQtd || 1,
           motivo: 'Item fora da medição financeira',
-          recorder: r.recorder || '—',
-          supervisor: r.supervisor || '—',
+          recorder: getRecordRecorderName(r) || '—',
+          supervisor: getRecordSupervisorName(r) || '—',
         })
       }
 
@@ -97,15 +98,15 @@ export function PrateleiraPage() {
           resultado.push({
             id: `${r.id}-tubo1500`,
             data: r.date,
-            neighborhood: r.neighborhood,
-            road: r.road,
+            neighborhood: getRecordNeighborhood(r),
+            road: getRecordRoadName(r),
             grupo: 'Drenagem',
             item: 'Tubo DN 1500',
             unidade: 'm',
             quantidade: r.data.drenagens?.[0]?.tuboQtd || 1,
             motivo: 'Diâmetro sem preço cadastrado',
-            recorder: r.recorder || '—',
-            supervisor: r.supervisor || '—',
+            recorder: getRecordRecorderName(r) || '—',
+            supervisor: getRecordSupervisorName(r) || '—',
           })
         }
       }
@@ -126,15 +127,15 @@ export function PrateleiraPage() {
             resultado.push({
               id: `${r.id}-pv-${i}`,
               data: r.date,
-              neighborhood: r.neighborhood,
-              road: r.road,
+              neighborhood: getRecordNeighborhood(r),
+              road: getRecordRoadName(r),
               grupo: 'PV / BL',
               item: 'PV não compatível',
               unidade: 'un',
               quantidade: 1,
               motivo: motivos.join(' | '),
-              recorder: r.recorder || '—',
-              supervisor: r.supervisor || '—',
+              recorder: getRecordRecorderName(r) || '—',
+              supervisor: getRecordSupervisorName(r) || '—',
             })
           }
         }
@@ -150,15 +151,15 @@ export function PrateleiraPage() {
             resultado.push({
               id: `${r.id}-bl-${i}`,
               data: r.date,
-              neighborhood: r.neighborhood,
-              road: r.road,
+              neighborhood: getRecordNeighborhood(r),
+              road: getRecordRoadName(r),
               grupo: 'PV / BL',
               item: 'BL não finalizado',
               unidade: 'un',
               quantidade: qtd,
               motivo: `Status: ${bl.status || '—'}`,
-              recorder: r.recorder || '—',
-              supervisor: r.supervisor || '—',
+              recorder: getRecordRecorderName(r) || '—',
+              supervisor: getRecordSupervisorName(r) || '—',
             })
           }
         }

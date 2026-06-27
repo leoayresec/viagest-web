@@ -80,13 +80,23 @@ export interface RecordData {
 export interface ViaGestRecord {
   id: string
   date: string
-  neighborhood: string
-  road: string
-  supervisor: string | null
-  recorder: string | null
   serviceType: string
   data: Record<string, any>
   createdAt: string
+  roadId: string | null
+  supervisorId: string | null
+  recorderId: string | null
+  userId?: string | null
+  road?: {
+    id: string; name: string
+    neighborhood?: {
+      id: string; name: string
+      city?: { id: string; name: string; state?: { id: string; name: string; code: string } }
+    }
+  } | null
+  supervisor?: { id: string; name: string; role: string } | null
+  recorder?: { id: string; name: string; role: string } | null
+  user?: { id: string; name: string } | null
 }
 
 export interface Via {
@@ -100,4 +110,39 @@ export interface Via {
 export interface TeamMember {
   nome: string
   funcao: 'encarregado' | 'apontador'
+}
+
+export function getRecordNeighborhood(r: ViaGestRecord): string {
+  return r.road?.neighborhood?.name ?? ''
+}
+
+export function getRecordRoadName(r: ViaGestRecord): string {
+  return r.road?.name ?? ''
+}
+
+export function getRecordCity(r: ViaGestRecord): string {
+  return r.road?.neighborhood?.city?.name ?? ''
+}
+
+export function getRecordState(r: ViaGestRecord): string {
+  return r.road?.neighborhood?.city?.state?.code ?? ''
+}
+
+export function getRecordSupervisorName(r: ViaGestRecord): string {
+  return r.supervisor?.name ?? ''
+}
+
+export function getRecordRecorderName(r: ViaGestRecord): string {
+  return r.recorder?.name ?? ''
+}
+
+export function getRecordFullLocation(r: ViaGestRecord): string {
+  const parts: string[] = []
+  const bairro = getRecordNeighborhood(r)
+  const via = getRecordRoadName(r)
+  const cidade = getRecordCity(r)
+  if (cidade) parts.push(cidade)
+  if (bairro) parts.push(bairro)
+  if (via) parts.push(via)
+  return parts.join(' / ')
 }

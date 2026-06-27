@@ -3,6 +3,7 @@ import { FileText, Download, AlertCircle } from 'lucide-react'
 import { useRecordsStore } from '../../records/stores/records.store'
 import { useSettingsStore } from '../../settings/stores/settings.store'
 import { fmtNum, toNum, dataBr, metricasOperacionais } from '../../../core/utils/format'
+import { getRecordNeighborhood, getRecordRoadName } from '../../../core/types/records'
 
 type TipoPDF = 'quantitativo_geral' | 'quantitativo_via' | 'redes_auxiliares' | 'rede_domiciliar'
 
@@ -28,7 +29,7 @@ export function RelatorioPDFPage() {
 
     if (tipoPDF === 'quantitativo_via') {
       if (!bairro || !via) { setErro('Selecione o bairro e a via.'); return }
-      filtrados = filtrados.filter((r) => r.neighborhood === bairro && r.road === via)
+      filtrados = filtrados.filter((r) => getRecordNeighborhood(r) === bairro && getRecordRoadName(r) === via)
     } else if (tipoPDF === 'redes_auxiliares') {
       filtrados = filtrados.filter((r) => r.serviceType === 'redes_auxiliares')
     } else if (tipoPDF === 'rede_domiciliar') {

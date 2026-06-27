@@ -3,6 +3,7 @@ import { Search, FileText, Download, Calendar } from 'lucide-react'
 import { useRecordsStore } from '../../records/stores/records.store'
 import { useSettingsStore } from '../../settings/stores/settings.store'
 import { labelTipo, fmtNum, dataBr, resumoRecord } from '../../../core/utils/format'
+import { getRecordNeighborhood, getRecordRoadName, getRecordSupervisorName, getRecordRecorderName } from '../../../core/types/records'
 import type { ViaGestRecord, ServiceType } from '../../../core/types/records'
 import type { ApiRecord } from '../../records/stores/records.store'
 
@@ -36,8 +37,8 @@ export function HistoricoViaPage() {
   const resultado = useMemo(() => {
     if (!consultado) return [] as ApiRecord[]
     return records.filter((r) => {
-      if (filtroBairro && r.neighborhood !== filtroBairro) return false
-      if (filtroVia && r.road !== filtroVia) return false
+      if (filtroBairro && getRecordNeighborhood(r) !== filtroBairro) return false
+      if (filtroVia && getRecordRoadName(r) !== filtroVia) return false
       if (dataInicio && r.date < dataInicio) return false
       if (dataFim && r.date > dataFim) return false
       return true
@@ -112,7 +113,7 @@ export function HistoricoViaPage() {
   }
 
   function formatarOutros(r: ApiRecord): string {
-    const viaGestRecord = { ...r, tipo: r.serviceType, bairro: r.neighborhood, via: r.road, encarregado: r.supervisor, apontador: r.recorder } as ViaGestRecord
+    const viaGestRecord = { ...r, tipo: r.serviceType, bairro: getRecordNeighborhood(r), via: getRecordRoadName(r), encarregado: getRecordSupervisorName(r), apontador: getRecordRecorderName(r) } as ViaGestRecord
     return resumoRecord(viaGestRecord)
   }
 
@@ -126,7 +127,7 @@ export function HistoricoViaPage() {
             <div key={r.id} className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2">
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
                 <span className="font-medium text-gray-700 dark:text-gray-200">{labelTipo(r.serviceType)}</span>
-                <span>Supervisor: {r.supervisor || '—'} | Apontador: {r.recorder || '—'}</span>
+                <span>Supervisor: {getRecordSupervisorName(r) || '—'} | Apontador: {getRecordRecorderName(r) || '—'}</span>
               </div>
               <p className="text-sm text-gray-800 dark:text-gray-200">{formatter(r) || 'Sem dados'}</p>
             </div>

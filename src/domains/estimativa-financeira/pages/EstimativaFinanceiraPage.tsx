@@ -4,6 +4,7 @@ import { useSettingsStore } from '../../settings/stores/settings.store'
 import { metricasOperacionais, fmtNum, fmtMoeda, dataSql } from '../../../core/utils/format'
 import { estimativaCustosOperacionais } from '../../../core/utils/estimativa'
 import { Search, Calculator } from 'lucide-react'
+import { getRecordNeighborhood, getRecordRoadName } from '../../../core/types/records'
 
 const SERVICOS_MAPA: [string, string][] = [
   ['Escavação m³', 'escavacao_m3'],
@@ -58,8 +59,8 @@ export function EstimativaFinanceiraPage() {
     if (dataInicioVal && dataFimVal) {
       filtrados = filtrados.filter((r) => r.date >= dataInicioVal && r.date <= dataFimVal)
     }
-    if (bairroFiltro) filtrados = filtrados.filter((r) => r.neighborhood === bairroFiltro)
-    if (viaFiltro) filtrados = filtrados.filter((r) => r.road === viaFiltro)
+    if (bairroFiltro) filtrados = filtrados.filter((r) => getRecordNeighborhood(r) === bairroFiltro)
+    if (viaFiltro) filtrados = filtrados.filter((r) => getRecordRoadName(r) === viaFiltro)
     return filtrados
   }, [records, dataInicioVal, dataFimVal, bairroFiltro, viaFiltro, carregado])
 

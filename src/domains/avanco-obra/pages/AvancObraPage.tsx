@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useRecordsStore } from '../../records/stores/records.store'
 import { useSettingsStore } from '../../settings/stores/settings.store'
 import { toNum } from '../../../core/utils/format'
+import { getRecordNeighborhood, getRecordRoadName } from '../../../core/types/records'
 import { ChevronDown, ChevronRight, AlertTriangle, RefreshCw, BarChart3 } from 'lucide-react'
 
 interface AvancoVia {
@@ -72,9 +73,9 @@ export function AvancObraPage() {
     if (!carregado) return []
     const viasSet = new Set<string>()
     for (const r of records) {
-      const passaBairro = !bairroFiltro || r.neighborhood === bairroFiltro
-      const passaVia = !viaFiltro || r.road === viaFiltro
-      const viaInfo = vias.find((v) => v.bairro === r.neighborhood && v.nome === r.road)
+      const passaBairro = !bairroFiltro || getRecordNeighborhood(r) === bairroFiltro
+      const passaVia = !viaFiltro || getRecordRoadName(r) === viaFiltro
+      const viaInfo = vias.find((v) => v.bairro === getRecordNeighborhood(r) && v.nome === getRecordRoadName(r))
       const passaStatus = viaInfo
         ? (viaInfo.status === 'ativa' && filtroAtivas) ||
           (viaInfo.status === 'encerrada' && filtroEncerradas) ||
@@ -82,7 +83,7 @@ export function AvancObraPage() {
           (viaInfo.status === 'em_andamento' && filtroAtivas)
         : filtroAtivas
       if (passaBairro && passaVia && passaStatus) {
-        viasSet.add(`${r.neighborhood}||${r.road}`)
+        viasSet.add(`${getRecordNeighborhood(r)}||${getRecordRoadName(r)}`)
       }
     }
     return Array.from(viasSet).sort()
@@ -91,7 +92,7 @@ export function AvancObraPage() {
   const registroPorChave = useMemo(() => {
     const map = new Map<string, typeof records>()
     for (const r of records) {
-      const chave = `${r.neighborhood}||${r.road}`
+      const chave = `${getRecordNeighborhood(r)}||${getRecordRoadName(r)}`
       if (!map.has(chave)) map.set(chave, [])
       map.get(chave)!.push(r)
     }

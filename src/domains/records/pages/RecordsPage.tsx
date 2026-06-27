@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '../../auth/auth.store'
-import { useSettingsStore } from '../../settings/stores/settings.store'
+import { useGeographyStore } from '../stores/geography.store'
 import { useRecordsStore, type NewRecord } from '../stores/records.store'
 import type { DrenagemItem, EspinhaBL, PavTrecho, RedeAuxiliar, UrbanizacaoLado } from '../../../core/types/records'
 
@@ -32,21 +32,26 @@ function tuboVol(diam: string | undefined, comp: number): number {
 
 export function RecordsPage() {
   const user = useAuthStore((s) => s.user)
-  const hasPermission = useAuthStore((s) => s.hasPermission)
-  const { listarBairros, listarVias, listarViasAtivas, listarEquipe, salvarVia, salvarMembro } = useSettingsStore()
+  const {
+    states, cities, neighborhoods, roads, teamMembers,
+    fetchStates, fetchCities, fetchNeighborhoods, createNeighborhood,
+    fetchRoads, createRoad, fetchTeamMembers,
+  } = useGeographyStore()
   const addBatch = useRecordsStore((s) => s.addBatch)
   const [saving, setSaving] = useState(false)
 
   const [data, setData] = useState(new Date().toISOString().slice(0, 10))
-  const [bairro, setBairro] = useState('')
-  const [via, setVia] = useState('')
-  const [encarregado, setEncarregado] = useState('')
-  const [apontador, setApontador] = useState(user?.name || '')
+  const [selectedState, setSelectedState] = useState('')
+  const [selectedCity, setSelectedCity] = useState('')
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState('')
+  const [selectedRoad, setSelectedRoad] = useState('')
+  const [selectedSupervisor, setSelectedSupervisor] = useState('')
+  const isApontador = user?.role === 'apontador'
+  const [selectedRecorder, setSelectedRecorder] = useState(isApontador ? (user?.name || '') : '')
   const [msg, setMsg] = useState('')
 
   const [novoBairro, setNovoBairro] = useState('')
   const [novaVia, setNovaVia] = useState('')
-  const [novoEnc, setNovoEnc] = useState('')
 
   const [limpezaComp, setLimpezaComp] = useState('')
   const [limpezaLarg, setLimpezaLarg] = useState('')
@@ -116,32 +121,33 @@ export function RecordsPage() {
 
   const [infoAdic, setInfoAdic] = useState('')
 
-  const bairros = listarBairros()
-  const viasDisponiveis = !hasPermission('settings:write') ? listarViasAtivas(bairro) : listarVias(bairro)
-  const encarregados = listarEquipe('encarregado')
-  const apontadores = listarEquipe('apontador')
+  // Geography cascading state
+  useEffect(() => { fetchStates() }, [])
+  useEffect(() => { if (selectedState) fetchCities(selectedState) }, [selectedState])
+  useEffect(() => { if (selectedCity) fetchNeighborhoods(selectedCity) }, [selectedCity])
+  useEffect(() => { if (selectedNeighborhood) fetchRoads(selectedNeighborhood) }, [selectedNeighborhood])
+  useEffect(() => { fetchTeamMembers() }, [])
 
-  function handleAddBairro() {
-    if (novoBairro.trim()) {
-      salvarVia(novoBairro.trim(), '_placeholder_')
-      setBairro(novoBairro.trim())
-      setNovoBairro('')
+  const encarregados = teamMembers.filter((m) => m.role.name === 'encarregado')
+  const apontadores = teamMembers.filter((m) => m.role.name === 'apontador')
+
+  async function handleAddBairro() {
+    if (novoBairro.trim() && selectedCity) {
+      const result = await createNeighborhood(selectedCity, novoBairro.trim())
+      if (result) {
+        setSelectedNeighborhood(result.id)
+        setNovoBairro('')
+      }
     }
   }
 
-  function handleAddVia() {
-    if (bairro && novaVia.trim()) {
-      salvarVia(bairro, novaVia.trim())
-      setVia(novaVia.trim())
-      setNovaVia('')
-    }
-  }
-
-  function handleAddEnc() {
-    if (novoEnc.trim()) {
-      salvarMembro(novoEnc.trim(), 'encarregado')
-      setEncarregado(novoEnc.trim())
-      setNovoEnc('')
+  async function handleAddVia() {
+    if (selectedNeighborhood && novaVia.trim()) {
+      const result = await createRoad(selectedNeighborhood, novaVia.trim())
+      if (result) {
+        setSelectedRoad(result.id)
+        setNovaVia('')
+      }
     }
   }
 
@@ -163,11 +169,17 @@ export function RecordsPage() {
   }
 
   async function handleSalvar() {
-    if (!bairro || !via || !encarregado) { alert('Preencha Bairro, Via e Encarregado'); return }
+    if (!selectedRoad || !selectedSupervisor) { alert('Selecione Via e Encarregado'); return }
     setSaving(true)
     setMsg('')
 
-    const base = { date: data, neighborhood: bairro, road: via, supervisor: encarregado || undefined, recorder: apontador || undefined }
+    const base = {
+      date: data,
+      roadId: selectedRoad,
+      supervisorId: selectedSupervisor || undefined,
+      recorderId: isApontador ? undefined : (selectedRecorder || undefined),
+      recorderName: isApontador ? (user?.name || undefined) : undefined,
+    }
     const toSave: NewRecord[] = []
 
     // Limpeza
@@ -400,10 +412,26 @@ export function RecordsPage() {
             <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500" />
           </div>
           <div>
+            <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Estado</label>
+            <select value={selectedState} onChange={(e) => { setSelectedState(e.target.value); setSelectedCity(''); setSelectedNeighborhood(''); setSelectedRoad('') }} className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500">
+              <option value="">Selecione o estado</option>
+              {states.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Cidade</label>
+            <select value={selectedCity} onChange={(e) => { setSelectedCity(e.target.value); setSelectedNeighborhood(''); setSelectedRoad('') }} disabled={!selectedState} className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 disabled:opacity-50">
+              <option value="">Selecione a cidade</option>
+              {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Bairro</label>
             <div className="flex gap-1">
-              <datalist id="bairroList">{bairros.map((b) => <option key={b} value={b} />)}</datalist>
-              <input type="text" list="bairroList" value={bairro} onChange={(e) => setBairro(e.target.value)} placeholder="Selecione ou digite" className="flex-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500" />
+              <select value={selectedNeighborhood} onChange={(e) => { setSelectedNeighborhood(e.target.value); setSelectedRoad('') }} disabled={!selectedCity} className="flex-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 disabled:opacity-50">
+                <option value="">Selecione o bairro</option>
+                {neighborhoods.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
+              </select>
               <input type="text" value={novoBairro} onChange={(e) => setNovoBairro(e.target.value)} placeholder="Novo" className="w-20 px-2 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-500" />
               <button onClick={handleAddBairro} className="px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-xs rounded hover:bg-zinc-300 dark:hover:bg-zinc-600">+</button>
             </div>
@@ -411,30 +439,30 @@ export function RecordsPage() {
           <div>
             <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Via</label>
             <div className="flex gap-1">
-              <datalist id="viaList">{viasDisponiveis.map((v) => <option key={v} value={v} />)}</datalist>
-              <input type="text" list="viaList" value={via} onChange={(e) => setVia(e.target.value)} placeholder="Selecione ou digite" className="flex-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500" />
+              <select value={selectedRoad} onChange={(e) => setSelectedRoad(e.target.value)} disabled={!selectedNeighborhood} className="flex-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 disabled:opacity-50">
+                <option value="">Selecione a via</option>
+                {roads.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
               <input type="text" value={novaVia} onChange={(e) => setNovaVia(e.target.value)} placeholder="Nova" className="w-20 px-2 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-500" />
               <button onClick={handleAddVia} className="px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-xs rounded hover:bg-zinc-300 dark:hover:bg-zinc-600">+</button>
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Encarregado</label>
-            <div className="flex gap-1">
-              <datalist id="encList">{encarregados.map((e) => <option key={e} value={e} />)}</datalist>
-              <input type="text" list="encList" value={encarregado} onChange={(e) => setEncarregado(e.target.value)} placeholder="Selecione ou digite" className="flex-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500" />
-              <input type="text" value={novoEnc} onChange={(e) => setNovoEnc(e.target.value)} placeholder="Novo" className="w-20 px-2 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-500" />
-              <button onClick={handleAddEnc} className="px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-xs rounded hover:bg-zinc-300 dark:hover:bg-zinc-600">+</button>
-            </div>
+            <select value={selectedSupervisor} onChange={(e) => setSelectedSupervisor(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500">
+              <option value="">Selecione</option>
+              {encarregados.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">Apontador</label>
-            {hasPermission('settings:write') ? (
-              <div className="flex gap-1">
-                <datalist id="apontList">{apontadores.map((a) => <option key={a} value={a} />)}</datalist>
-                <input type="text" list="apontList" value={apontador} onChange={(e) => setApontador(e.target.value)} className="flex-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500" />
-              </div>
-            ) : (
+            {isApontador ? (
               <input type="text" value={user?.name || ''} disabled className="w-full px-3 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 text-sm" />
+            ) : (
+              <select value={selectedRecorder} onChange={(e) => setSelectedRecorder(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500">
+                <option value="">Selecione</option>
+                {apontadores.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
+              </select>
             )}
           </div>
         </div>
@@ -773,11 +801,11 @@ export function RecordsPage() {
 
       {/* Botão salvar */}
       <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
-        <button onClick={handleSalvar} disabled={saving || !bairro || !via || !encarregado} className="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 font-medium rounded-lg text-sm hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleSalvar} disabled={saving || !selectedRoad || !selectedSupervisor} className="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 font-medium rounded-lg text-sm hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           {saving ? 'Salvando...' : 'SALVAR LANÇAMENTO COMPLETO'}
         </button>
-        {(!bairro || !via || !encarregado) && (
-          <p className="text-xs text-zinc-500 mt-2 text-center">Preencha Bairro, Via e Encarregado antes de salvar.</p>
+        {(!selectedRoad || !selectedSupervisor) && (
+          <p className="text-xs text-zinc-500 mt-2 text-center">Selecione Via e Encarregado antes de salvar.</p>
         )}
       </div>
     </div>

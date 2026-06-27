@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useRecordsStore } from '../../records/stores/records.store'
 import { useSettingsStore } from '../../settings/stores/settings.store'
+import { getRecordRecorderName } from '../../../core/types/records'
 
 interface ApontadorStatus {
   nome: string
@@ -24,7 +25,7 @@ export function ControleRelatoriosPage() {
     const records = useRecordsStore.getState().records
 
     const list: ApontadorStatus[] = apontadores.map((nome) => {
-      const doApontador = records.filter((r) => r.recorder === nome)
+      const doApontador = records.filter((r) => getRecordRecorderName(r) === nome)
       const tempos = doApontador.map((r) => r.createdAt).filter(Boolean).sort()
       return {
         nome,

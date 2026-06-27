@@ -1,4 +1,5 @@
 import type { ViaGestRecord } from '../types/records'
+import { getRecordNeighborhood, getRecordRoadName, getRecordRecorderName } from '../types/records'
 
 export const TIPO_LABELS: Record<string, string> = {
   escavacao: 'Escavação',
@@ -117,9 +118,12 @@ export function metricasOperacionais(records: ViaGestRecord[]): MetricasOperacio
   const bairros = new Set<string>()
   const apontadores = new Set<string>()
   for (const r of records) {
-    if (r.neighborhood && r.road) vias.add(`${r.neighborhood}||${r.road}`)
-    if (r.neighborhood) bairros.add(r.neighborhood)
-    if (r.recorder) apontadores.add(r.recorder)
+    const neighborhood = getRecordNeighborhood(r)
+    const road = getRecordRoadName(r)
+    const recorder = getRecordRecorderName(r)
+    if (neighborhood && road) vias.add(`${neighborhood}||${road}`)
+    if (neighborhood) bairros.add(neighborhood)
+    if (recorder) apontadores.add(recorder)
   }
 
   const m: MetricasOperacionais = {
